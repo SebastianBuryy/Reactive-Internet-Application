@@ -380,6 +380,22 @@ createApp({
 
         getWeatherIconUrl(iconCode) {
             return `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+        },
+
+        getTemperatureLinePoints() {
+            if (!this.temperatureChart || this.temperatureChart.length === 0) return '';
+
+            const chartHeight = 256; // h-64 = 16rem = 256px
+            const bottomPadding = 48; // pb-12 = 3rem = 48px for labels
+            const availableHeight = chartHeight - bottomPadding;
+
+            const points = this.temperatureChart.map((point, index) => {
+                const x = (index / (this.temperatureChart.length - 1)) * 100;
+                const y = availableHeight - (point.temp * 3);
+                return `${x}%,${y}`;
+            });
+
+            return points.join(' ');
         }
     },
 }).mount('#app');
