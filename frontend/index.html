@@ -1,12 +1,333 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weather App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+
+  <body
+    class="bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 min-h-screen"
+  >
+    <div id="app" class="container mx-auto px-4 py-8 max-w-7xl">
+      <!-- Header -->
+      <h1
+        class="text-4xl md:text-5xl font-bold text-white text-center mb-8 drop-shadow-lg"
+      >
+        Weather Forecast Dashboard
+      </h1>
+
+      <!-- Search Component -->
+      <div class="search-container relative mb-8 max-w-2xl mx-auto">
+        <input
+          type="text"
+          placeholder="Search for a city..."
+          v-model="searchQuery"
+          @input="getCities"
+          class="w-full px-6 py-4 text-lg rounded-xl border-2 border-white/20 bg-white/90 backdrop-blur-sm shadow-lg focus:outline-none focus:ring-4 focus:ring-white/50 focus:border-white transition-all"
+        />
+
+        <div
+          v-if="suggestions.length > 0"
+          class="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl max-h-80 overflow-y-auto z-50 backdrop-blur-sm"
+        >
+          <div
+            v-for="city in suggestions"
+            :key="city.lat + city.lon"
+            @click="selectCity(city)"
+            class="px-6 py-3 hover:bg-blue-50 cursor-pointer transition-colors border-b border-gray-100 last:border-b-0 first:rounded-t-xl last:rounded-b-xl"
+          >
+            {{ formatCityDisplay(city) }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Weather Display -->
+      <div v-if="weatherData && selectedCity" class="space-y-6">
+        <!-- Location Title -->
+        <h2 class="text-3xl font-bold text-white text-center drop-shadow-md">
+          {{ selectedCity.name }}, {{ selectedCity.country }}
+        </h2>
+
+        <!-- Packing Recommendations -->
+        <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6">
+          <h3
+            class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2"
+          >
+            <span>🎒</span> Packing Recommendations
+          </h3>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div
+              class="flex items-start gap-3 p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl"
+            >
+              <span class="text-3xl">🌂</span>
+              <div>
+                <p class="font-semibold text-gray-700">Umbrella:</p>
+                <p v-if="needsUmbrella" class="text-red-600 font-bold">
+                  Yes, bring an umbrella! Rain expected.
+                </p>
+                <p v-else class="text-green-600 font-bold">
+                  No umbrella needed.
+                </p>
+              </div>
+            </div>
+            <div
+              class="flex items-start gap-3 p-4 bg-gradient-to-r from-orange-50 to-orange-100 rounded-xl"
+            >
+              <span class="text-3xl">👕</span>
+              <div>
+                <p class="font-semibold text-gray-700">Clothing:</p>
+                <p class="text-orange-600 font-bold">
+                  Pack for {{ tempCategory }} weather
+                </p>
+                <p v-if="tempCategory === 'Cold'" class="text-sm text-gray-600">
+                  (below 8°C)
+                </p>
+                <p
+                  v-else-if="tempCategory === 'Mild'"
+                  class="text-sm text-gray-600"
+                >
+                  (8°C - 24°C)
+                </p>
+                <p
+                  v-else-if="tempCategory === 'Hot'"
+                  class="text-sm text-gray-600"
+                >
+                  (above 24°C)
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3-Day Forecast Table (Mandatory) -->
+        <div
+          class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6 overflow-x-auto"
+        >
+          <h3 class="text-2xl font-bold text-gray-800 mb-4">
+            📊 3-Day Forecast Summary
+          </h3>
+          <table class="w-full">
+            <thead>
+              <tr class="bg-blue-600 text-white">
+                <th class="px-4 py-3 text-left rounded-tl-lg">Date</th>
+                <th class="px-4 py-3 text-left">Temperature</th>
+                <th class="px-4 py-3 text-left">Wind Speed</th>
+                <th class="px-4 py-3 text-left rounded-tr-lg">Rainfall</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="(day, index) in threeDayForecast"
+                :key="day.date"
+                :class="index % 2 === 0 ? 'bg-gray-50' : 'bg-white'"
+                class="hover:bg-blue-50 transition-colors"
+              >
+                <td class="px-4 py-3 font-medium text-gray-700">
+                  {{ day.date }}
+                </td>
+                <td class="px-4 py-3 text-gray-600">
+                  {{ day.minTemp }}°C - {{ day.maxTemp }}°C
+                </td>
+                <td class="px-4 py-3 text-gray-600">
+                  {{ day.avgWindSpeed }} m/s
+                </td>
+                <td class="px-4 py-3 text-gray-600">
+                  {{ day.totalRainfall }} mm
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Current Weather Card -->
+        <div
+          class="bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl shadow-2xl p-8 text-white"
+        >
+          <h3 class="text-2xl font-bold mb-6 flex items-center gap-2">
+            <span>☀️</span> Current Weather
+          </h3>
+          <div class="grid md:grid-cols-3 gap-6 items-center">
+            <!-- Weather Icon & Temp -->
+            <div
+              class="flex items-center justify-center md:justify-start gap-4"
+            >
+              <img
+                :src="getWeatherIconUrl(currentWeather.icon)"
+                :alt="currentWeather.description"
+                class="w-24 h-24 drop-shadow-lg"
+              />
+              <div>
+                <div class="text-5xl font-bold">
+                  {{ currentWeather.temp }}°C
+                </div>
+                <div class="text-lg capitalize opacity-90">
+                  {{ currentWeather.description }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Details Grid -->
+            <div class="md:col-span-2 grid grid-cols-2 gap-4">
+              <div class="bg-white/20 backdrop-blur-sm rounded-xl p-4">
+                <p class="text-sm opacity-80">Feels like</p>
+                <p class="text-2xl font-bold">
+                  {{ currentWeather.feelsLike }}°C
+                </p>
+              </div>
+              <div class="bg-white/20 backdrop-blur-sm rounded-xl p-4">
+                <p class="text-sm opacity-80">Humidity</p>
+                <p class="text-2xl font-bold">{{ currentWeather.humidity }}%</p>
+              </div>
+              <div class="bg-white/20 backdrop-blur-sm rounded-xl p-4">
+                <p class="text-sm opacity-80">Wind</p>
+                <p class="text-2xl font-bold">
+                  {{ currentWeather.windSpeed }} m/s
+                </p>
+              </div>
+              <div
+                v-if="currentWeather.rainfall > 0"
+                class="bg-white/20 backdrop-blur-sm rounded-xl p-4"
+              >
+                <p class="text-sm opacity-80">Rainfall</p>
+                <p class="text-2xl font-bold">
+                  {{ currentWeather.rainfall }} mm
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Next 3 Days Forecast Cards -->
+        <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6">
+          <h3 class="text-2xl font-bold text-gray-800 mb-6">
+            📅 Next 3 Days Detailed Forecast
+          </h3>
+          <div class="grid md:grid-cols-3 gap-6">
+            <div
+              v-for="day in threeDayForecast"
+              :key="day.date"
+              class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow border border-gray-200"
+            >
+              <div class="text-lg font-bold text-gray-800 mb-3">
+                {{ day.date }}
+              </div>
+              <div class="flex items-center justify-between mb-4">
+                <img
+                  :src="getWeatherIconUrl(day.icon)"
+                  :alt="day.description"
+                  class="w-16 h-16"
+                />
+                <div class="text-3xl font-bold text-blue-600">
+                  {{ day.minTemp }}° - {{ day.maxTemp }}°
+                </div>
+              </div>
+              <div class="text-sm text-gray-600 capitalize mb-4">
+                {{ day.description }}
+              </div>
+              <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Feels like:</span>
+                  <span class="font-semibold text-gray-800"
+                    >{{ day.avgFeelsLike }}°C</span
+                  >
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Humidity:</span>
+                  <span class="font-semibold text-gray-800"
+                    >{{ day.avgHumidity }}%</span
+                  >
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Wind:</span>
+                  <span class="font-semibold text-gray-800"
+                    >{{ day.avgWindSpeed }} m/s</span
+                  >
+                </div>
+                <div v-if="day.totalRainfall > 0" class="flex justify-between">
+                  <span class="text-gray-600">Rain:</span>
+                  <span class="font-semibold text-blue-600"
+                    >{{ day.totalRainfall }} mm</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid md:grid-cols-2 gap-6">
+          <!-- Temperature Chart -->
+          <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">
+              🌡️ Temperature Trend
+            </h3>
+            <div class="flex items-end justify-around h-64 gap-2">
+              <div
+                v-for="(point, index) in temperatureChart"
+                :key="index"
+                class="flex flex-col items-center gap-2 flex-1"
+              >
+                <div class="text-xs font-bold text-blue-600">
+                  {{ point.temp }}°
+                </div>
+                <div
+                  class="w-full bg-gradient-to-t from-blue-500 to-blue-300 rounded-t-lg transition-all hover:from-blue-600 hover:to-blue-400"
+                  :style="{ height: point.temp * 3 + 'px', minHeight: '20px' }"
+                ></div>
+                <div class="text-xs text-gray-600 text-center leading-tight">
+                  {{ point.time }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Rainfall Chart -->
+          <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">
+              💧 Rainfall Levels
+            </h3>
+            <div class="flex items-end justify-around h-64 gap-4">
+              <div
+                v-for="(point, index) in rainfallChart"
+                :key="index"
+                class="flex flex-col items-center gap-2 flex-1"
+              >
+                <div class="text-xs font-bold text-blue-600">
+                  {{ point.rainfall }}mm
+                </div>
+                <div
+                  class="w-full bg-gradient-to-t from-blue-400 to-blue-200 rounded-t-lg transition-all hover:from-blue-500 hover:to-blue-300"
+                  :style="{
+                    height: parseFloat(point.rainfall) * 10 + 'px',
+                    minHeight: '10px'
+                  }"
+                ></div>
+                <div class="text-xs text-gray-600 text-center leading-tight">
+                  {{ point.date }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Initial state message -->
+      <div
+        v-else
+        class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-16 text-center"
+      >
+        <div class="text-6xl mb-4">🔍</div>
+        <p class="text-2xl text-gray-600 font-medium">
+          Search for a city to see the weather forecast
+        </p>
+      </div>
+    </div>
+
+    <!-- Vue.js CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Vue App -->
+    <script src="app.js"></script>
+  </body>
 </html>
