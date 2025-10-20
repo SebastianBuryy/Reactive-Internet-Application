@@ -14,7 +14,10 @@ createApp({
             threeDayForecast: [],
             currentWeather: null,
             temperatureChart: [],
-            rainfallChart: []
+            rainfallChart: [],
+            airPollutionData: null,
+            airQualityWarnings: [],
+            overallAQI: null
         };
     },
     methods: {
@@ -66,6 +69,7 @@ createApp({
             this.searchQuery = this.formatCityDisplay(city);
             this.suggestions = [];
             await this.getWeather(city.lat, city.lon);
+            await this.getAirPollution(city.lat, city.lon);
         },
         async getWeather(lat, lon) {
             try {
@@ -75,6 +79,82 @@ createApp({
             } catch (error) {
                 console.error("Error fetching weather data:", error);
             }
+        },
+        async getAirPollution(lat, lon) {
+            try {
+                const response = await fetch(`http://localhost:3000/api/air_pollution?lat=${lat}&lon=${lon}`);
+                this.airPollutionData = await response.json();
+                this.processAirPollutionData();
+            } catch (error) {
+                console.error("Error fetching air pollution data:", error);
+            }
+        },
+        processAirPollutionData() {
+            if (!this.airPollutionData || !this.airPollutionData.list || this.airPollutionData.list.length === 0) return;
+
+            this.airQualityWarnings = [];
+
+            // Get the current/first air quality reading
+            const currentAQ = this.airPollutionData.list[0];
+            const aqi = currentAQ.main.aqi;
+            const components = currentAQ.components;
+
+            // AQI level descriptions
+            const aqiLevels = {
+                1: { level: 'Good', color: 'green' },
+                2: { level: 'Fair', color: 'yellow' },
+                3: { level: 'Moderate', color: 'orange' },
+                4: { level: 'Poor', color: 'red' },
+                5: { level: 'Very Poor', color: 'purple' }
+            };
+
+            // WHO Air Quality Guidelines - "Good" thresholds
+            const thresholds = {
+                pm2_5: { good: 10, pollutant: 'Particulate (PM2.5)', health: 'Can cause respiratory issues and heart disease.' },
+                pm10: { good: 20, pollutant: 'Particulate (PM10)', health: 'Can irritate airways and worsen lung diseases.' },
+                o3: { good: 60, pollutant: 'Ozone (O₃)', health: 'Can trigger coughing, throat irritation, and aggravates asthma or chronic lung conditions.' },
+                no: { good: 40, pollutant: 'Nitrogen Monoxide (NO)', health: 'Can irritate airways and can impair lung function with prolonged exposure.' },
+                nh3: { good: 180, pollutant: 'Ammonia (NH₃)', health: 'Can irritate the eyes, skin, and respiratory system.' },
+                no2: { good: 40, pollutant: 'Nitrogen Dioxide (NO₂)', health: 'Can cause inflammation of the respiratory tract and worsens asthma and lung diseases.' },
+                so2: { good: 20, pollutant: 'Sulfur Dioxide (SO₂)', health: 'Can cause shortness of breath and irritation of eyes, nose, and throat.' },
+                co: { good: 4400, pollutant: 'Carbon Monoxide (CO)', health: 'Can reduce oxygen delivery in the body, leading to headaches, dizziness, or even impaired brain function.' }
+            };
+
+            // Check each pollutant
+            for (const [key, threshold] of Object.entries(thresholds)) {
+                const value = components[key];
+                if (value > threshold.good) {
+                    const exceedancePercent = Math.round(((value - threshold.good) / threshold.good) * 100);
+
+                    // Determine severity
+                    let severity = 'Moderate';
+                    let severityColor = 'orange';
+                    if (exceedancePercent > 100) {
+                        severity = 'High';
+                        severityColor = 'red';
+                    } else if (exceedancePercent > 200) {
+                        severity = 'Very High';
+                        severityColor = 'purple';
+                    }
+
+                    this.airQualityWarnings.push({
+                        pollutant: threshold.pollutant,
+                        value: value.toFixed(2),
+                        threshold: threshold.good,
+                        exceedancePercent: exceedancePercent,
+                        severity: severity,
+                        severityColor: severityColor,
+                        healthRisk: threshold.health
+                    });
+                }
+            }
+
+            // Store overall AQI info
+            this.overallAQI = {
+                level: aqi,
+                description: aqiLevels[aqi].level,
+                color: aqiLevels[aqi].color,
+            };
         },
         processWeatherData() {
             if (!this.weatherData || !this.weatherData.list) return;

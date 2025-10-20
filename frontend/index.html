@@ -33,326 +33,456 @@
   <body
     class="bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 min-h-screen flex flex-col"
   >
-    <div id="app" class="container mx-auto px-4 py-8 max-w-7xl flex-grow">
+
+    <div id="app" class="px-4 py-8 pt-24 w-full flex-grow">
       <!-- Header -->
-      <h1
-        class="text-4xl md:text-5xl font-bold text-white text-center mb-8 drop-shadow-lg"
+      <header
+        class="fixed top-0 left-0 right-0 bg-zinc-900 shadow-lg shadow-zinc-400/50 z-50 px-8 py-4"
       >
-        Weather Forecast Dashboard
-      </h1>
+        <div class="flex items-center justify-between gap-8">
+          <!-- Logo/Brand -->
+          <h1 class="text-2xl font-bold text-zinc-300 whitespace-nowrap">
+            AuroraView
+          </h1>
 
-      <!-- Search Component -->
-      <div class="search-container relative mb-8 max-w-2xl mx-auto">
-        <input
-          type="text"
-          placeholder="Search for a city..."
-          v-model="searchQuery"
-          @input="getCities"
-          class="w-full px-6 py-4 text-lg rounded-xl border-2 border-white/20 bg-white/90 backdrop-blur-sm shadow-lg focus:outline-none focus:ring-4 focus:ring-white/50 focus:border-white transition-all"
-        />
+          <!-- Search Component -->
+          <div class="search-container relative flex-1 max-w-sm">
+            <input
+              type="text"
+              placeholder="Search for a city..."
+              v-model="searchQuery"
+              @input="getCities"
+              class="w-full px-6 py-2 text-lg text-zinc-100 placeholder-zinc-300 rounded-xl border-2 border-zinc-300 bg-zinc-900 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+            />
 
-        <div
-          v-if="suggestions.length > 0"
-          class="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl max-h-80 overflow-y-auto z-50 backdrop-blur-sm"
-        >
-          <div
-            v-for="city in suggestions"
-            :key="city.lat + city.lon"
-            @click="selectCity(city)"
-            class="px-6 py-3 hover:bg-blue-50 cursor-pointer transition-colors border-b border-gray-100 last:border-b-0 first:rounded-t-xl last:rounded-b-xl"
-          >
-            {{ formatCityDisplay(city) }}
-          </div>
-        </div>
-      </div>
-
-      <!-- Weather Display -->
-      <div v-if="weatherData && selectedCity" class="space-y-6">
-        <!-- Location Title -->
-        <h2 class="text-3xl font-bold text-white text-center drop-shadow-md">
-          {{ selectedCity.name }}, {{ selectedCity.country }}
-        </h2>
-
-        <!-- Packing Recommendations -->
-        <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6">
-          <h3
-            class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2"
-          >
-            <span>🎒</span> Packing Recommendations
-          </h3>
-          <div class="grid md:grid-cols-2 gap-4">
             <div
-              class="flex items-start gap-3 p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl"
+              v-if="suggestions.length > 0"
+              class="absolute top-full left-0 right-0 mt-2 bg-zinc-800 rounded-xl shadow-2xl max-h-80 overflow-y-auto z-50"
             >
-              <span class="text-3xl">🌂</span>
-              <div>
-                <p class="font-semibold text-gray-700">Umbrella:</p>
-                <p v-if="needsUmbrella" class="text-red-600 font-bold">
-                  Yes, bring an umbrella! Rain expected.
-                </p>
-                <p v-else class="text-green-600 font-bold">
-                  No umbrella needed.
-                </p>
-              </div>
-            </div>
-            <div
-              class="flex items-start gap-3 p-4 bg-gradient-to-r from-orange-50 to-orange-100 rounded-xl"
-            >
-              <span class="text-3xl">👕</span>
-              <div>
-                <p class="font-semibold text-gray-700">Clothing:</p>
-                <p class="text-orange-600 font-bold">
-                  Pack for {{ tempCategory }} weather
-                </p>
-                <p v-if="tempCategory === 'Cold'" class="text-sm text-gray-600">
-                  (below 8°C)
-                </p>
-                <p
-                  v-else-if="tempCategory === 'Mild'"
-                  class="text-sm text-gray-600"
-                >
-                  (8°C - 24°C)
-                </p>
-                <p
-                  v-else-if="tempCategory === 'Hot'"
-                  class="text-sm text-gray-600"
-                >
-                  (above 24°C)
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 3-Day Forecast Table (Mandatory) -->
-        <div
-          class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6 overflow-x-auto"
-        >
-          <h3 class="text-2xl font-bold text-gray-800 mb-4">
-            📊 3-Day Forecast Summary
-          </h3>
-          <table class="w-full">
-            <thead>
-              <tr class="bg-blue-600 text-white">
-                <th class="px-4 py-3 text-left rounded-tl-lg">Date</th>
-                <th class="px-4 py-3 text-left">Temperature</th>
-                <th class="px-4 py-3 text-left">Wind Speed</th>
-                <th class="px-4 py-3 text-left rounded-tr-lg">Rainfall</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="(day, index) in threeDayForecast"
-                :key="day.date"
-                :class="index % 2 === 0 ? 'bg-gray-50' : 'bg-white'"
-                class="hover:bg-blue-50 transition-colors"
-              >
-                <td class="px-4 py-3 font-medium text-gray-700">
-                  {{ day.date }}
-                </td>
-                <td class="px-4 py-3 text-gray-600">
-                  {{ day.minTemp }}°C - {{ day.maxTemp }}°C
-                </td>
-                <td class="px-4 py-3 text-gray-600">
-                  {{ day.avgWindSpeed }} m/s
-                </td>
-                <td class="px-4 py-3 text-gray-600">
-                  {{ day.totalRainfall }} mm
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Current Weather Card -->
-        <div
-          class="bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl shadow-2xl p-8 text-white"
-        >
-          <h3 class="text-2xl font-bold mb-6 flex items-center gap-2">
-            <span>☀️</span> Current Weather
-          </h3>
-          <div class="grid md:grid-cols-3 gap-6 items-center">
-            <!-- Weather Icon & Temp -->
-            <div
-              class="flex items-center justify-center md:justify-start gap-4"
-            >
-              <img
-                :src="getWeatherIconUrl(currentWeather.icon)"
-                :alt="currentWeather.description"
-                class="w-24 h-24 drop-shadow-lg"
-              />
-              <div>
-                <div class="text-5xl font-bold">
-                  {{ currentWeather.temp }}°C
-                </div>
-                <div class="text-lg capitalize opacity-90">
-                  {{ currentWeather.description }}
-                </div>
-              </div>
-            </div>
-
-            <!-- Details Grid -->
-            <div class="md:col-span-2 grid grid-cols-2 gap-4">
-              <div class="bg-white/20 backdrop-blur-sm rounded-xl p-4">
-                <p class="text-sm opacity-80">Feels like</p>
-                <p class="text-2xl font-bold">
-                  {{ currentWeather.feelsLike }}°C
-                </p>
-              </div>
-              <div class="bg-white/20 backdrop-blur-sm rounded-xl p-4">
-                <p class="text-sm opacity-80">Humidity</p>
-                <p class="text-2xl font-bold">{{ currentWeather.humidity }}%</p>
-              </div>
-              <div class="bg-white/20 backdrop-blur-sm rounded-xl p-4">
-                <p class="text-sm opacity-80">Wind</p>
-                <p class="text-2xl font-bold">
-                  {{ currentWeather.windSpeed }} m/s
-                </p>
-              </div>
               <div
-                v-if="currentWeather.rainfall > 0"
-                class="bg-white/20 backdrop-blur-sm rounded-xl p-4"
+                v-for="city in suggestions"
+                :key="city.lat + city.lon"
+                @click="selectCity(city)"
+                class="px-6 py-3 hover:bg-zinc-700 cursor-pointer transition-colors text-white border-b border-gray-100 last:border-b-0 first:rounded-t-xl last:rounded-b-xl"
               >
-                <p class="text-sm opacity-80">Rainfall</p>
-                <p class="text-2xl font-bold">
-                  {{ currentWeather.rainfall }} mm
+                {{ formatCityDisplay(city) }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Location title -->
+      <!-- <div v-if="selectedCity" class="mt-3 mb-2 text-center flex-1">
+        <h2 class="text-xl font-bold text-white drop-shadow-md px-4 py-2 inline-block bg-zinc-800 rounded-lg">
+          Weather in {{ selectedCity.name }}, {{ selectedCity.country }}
+        </h2>
+      </div> -->
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
+        <template v-if="weatherData && selectedCity">
+        <div class="lg:col-span-5 space-y-6">
+
+            <!-- Packing Recommendations -->
+            <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6">
+              <h3
+                class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2"
+              >
+                <span>🎒</span> Packing Recommendations
+              </h3>
+              <div class="grid md:grid-cols-2 gap-4">
+                <div
+                  class="flex items-start gap-3 p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl"
+                >
+                  <span class="text-3xl">🌂</span>
+                  <div>
+                    <p class="font-semibold text-gray-700">Umbrella:</p>
+                    <p v-if="needsUmbrella" class="text-red-600 font-bold">
+                      Yes, bring an umbrella! Rain expected.
+                    </p>
+                    <p v-else class="text-green-600 font-bold">
+                      No umbrella needed.
+                    </p>
+                  </div>
+                </div>
+                <div
+                  class="flex items-start gap-3 p-4 bg-gradient-to-r from-orange-50 to-orange-100 rounded-xl"
+                >
+                  <span class="text-3xl">👕</span>
+                  <div>
+                    <p class="font-semibold text-gray-700">Clothing:</p>
+                    <p class="text-orange-600 font-bold">
+                      Pack for {{ tempCategory }} weather
+                    </p>
+                    <p
+                      v-if="tempCategory === 'Cold'"
+                      class="text-sm text-gray-600"
+                    >
+                      (below 8°C)
+                    </p>
+                    <p
+                      v-else-if="tempCategory === 'Mild'"
+                      class="text-sm text-gray-600"
+                    >
+                      (8°C - 24°C)
+                    </p>
+                    <p
+                      v-else-if="tempCategory === 'Hot'"
+                      class="text-sm text-gray-600"
+                    >
+                      (above 24°C)
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Air Quality Warnings -->
+            <div
+              v-if="airPollutionData"
+              class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6"
+            >
+              <h3
+                class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2"
+              >
+                <span>💨</span> Air Quality
+              </h3>
+
+              <!-- Overall AQI -->
+              <div
+                class="mb-4 p-4 rounded-xl"
+                :class="{
+                 'bg-green-100': overallAQI.level === 1,
+                 'bg-yellow-100': overallAQI.level === 2,
+                 'bg-orange-100': overallAQI.level === 3,
+                 'bg-red-100': overallAQI.level === 4,
+                 'bg-purple-100': overallAQI.level === 5
+               }"
+              >
+                <p class="text-lg font-semibold">
+                  Overall Air Quality:
+                  <span
+                    :class="{
+                'text-green-700': overallAQI.level === 1,
+                'text-yellow-700': overallAQI.level === 2,
+                'text-orange-700': overallAQI.level === 3,
+                'text-red-700': overallAQI.level === 4,
+                'text-purple-700': overallAQI.level === 5
+              }"
+                  >
+                    (Level {{ overallAQI.level }}), {{ overallAQI.description }}
+                  </span>
+                </p>
+              </div>
+
+              <!-- Warnings for elevated pollutants -->
+              <div v-if="airQualityWarnings.length > 0" class="space-y-3">
+                <div
+                  class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded"
+                >
+                  <p class="font-semibold text-yellow-800 mb-2">
+                    ⚠️ Warning: Elevated Pollutant Levels Detected
+                  </p>
+                </div>
+
+                <div
+                  v-for="(warning, index) in airQualityWarnings"
+                  :key="index"
+                  class="border-l-4 p-4 rounded-lg"
+                  :class="{
+                   'border-orange-400 bg-orange-50': warning.severity === 'Moderate',
+                   'border-red-400 bg-red-50': warning.severity === 'High',
+                   'border-purple-400 bg-purple-50': warning.severity === 'Very High'
+                 }"
+                >
+                  <div class="flex justify-between items-start mb-2">
+                    <h4
+                      class="font-bold text-lg"
+                      :class="{
+                      'text-orange-800': warning.severity === 'Moderate',
+                      'text-red-800': warning.severity === 'High',
+                      'text-purple-800': warning.severity === 'Very High'
+                    }"
+                    >
+                      {{ warning.pollutant }}
+                    </h4>
+                    <span
+                      class="px-3 py-1 rounded-full text-sm font-semibold"
+                      :class="{
+                        'bg-orange-200 text-orange-800': warning.severity === 'Moderate',
+                        'bg-red-200 text-red-800': warning.severity === 'High',
+                        'bg-purple-200 text-purple-800': warning.severity === 'Very High'
+                      }"
+                    >
+                      {{ warning.severity }}
+                    </span>
+                  </div>
+
+                  <div class="space-y-1 text-sm text-gray-700">
+                    <p>
+                      <strong>Current Level:</strong> {{ warning.value }} µg/m³
+                    </p>
+                    <p>
+                      <strong>Safe Threshold:</strong> {{ warning.threshold }}
+                      µg/m³
+                    </p>
+                    <p>
+                      <strong>Exceeded by:</strong> {{ warning.exceedancePercent
+                      }}%
+                    </p>
+                    <p class="mt-2 text-gray-600">
+                      <strong>Potential Health Risk:</strong> {{
+                      warning.healthRisk }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- No pollutants detected above threshold message -->
+              <div
+                v-else
+                class="bg-green-50 border-l-4 border-green-400 p-4 rounded"
+              >
+                <p class="font-semibold text-green-800">
+                  ✅ All pollutant levels are within safe limits
                 </p>
               </div>
             </div>
-          </div>
-        </div>
 
-        <!-- Next 3 Days Forecast Cards -->
-        <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6">
-          <h3 class="text-2xl font-bold text-gray-800 mb-6">
-            📅 Next 3 Days Detailed Forecast
-          </h3>
-          <div class="grid md:grid-cols-3 gap-6">
+            <!-- 3-Day Forecast Table (Mandatory) -->
             <div
-              v-for="day in threeDayForecast"
-              :key="day.date"
-              class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow border border-gray-200"
+              class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6 overflow-x-auto"
             >
-              <div class="text-lg font-bold text-gray-800 mb-3">
-                {{ day.date }}
-              </div>
-              <div class="flex items-center justify-between mb-4">
-                <img
-                  :src="getWeatherIconUrl(day.icon)"
-                  :alt="day.description"
-                  class="w-16 h-16"
-                />
-                <div class="text-3xl font-bold text-blue-600">
-                  {{ day.minTemp }}° - {{ day.maxTemp }}°
-                </div>
-              </div>
-              <div class="text-sm text-gray-600 capitalize mb-4">
-                {{ day.description }}
-              </div>
-              <div class="space-y-2 text-sm">
-                <div class="flex justify-between">
-                  <span class="text-gray-600">Feels like:</span>
-                  <span class="font-semibold text-gray-800"
-                    >{{ day.avgFeelsLike }}°C</span
+              <h3 class="text-2xl font-bold text-gray-800 mb-4">
+                📊 3-Day Forecast Summary
+              </h3>
+              <table class="w-full">
+                <thead>
+                  <tr class="bg-blue-600 text-white">
+                    <th class="px-4 py-3 text-left rounded-tl-lg">Date</th>
+                    <th class="px-4 py-3 text-left">Temperature</th>
+                    <th class="px-4 py-3 text-left">Wind Speed</th>
+                    <th class="px-4 py-3 text-left rounded-tr-lg">Rainfall</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="(day, index) in threeDayForecast"
+                    :key="day.date"
+                    :class="index % 2 === 0 ? 'bg-gray-50' : 'bg-white'"
+                    class="hover:bg-blue-50 transition-colors"
                   >
+                    <td class="px-4 py-3 font-medium text-gray-700">
+                      {{ day.date }}
+                    </td>
+                    <td class="px-4 py-3 text-gray-600">
+                      {{ day.minTemp }}°C - {{ day.maxTemp }}°C
+                    </td>
+                    <td class="px-4 py-3 text-gray-600">
+                      {{ day.avgWindSpeed }} m/s
+                    </td>
+                    <td class="px-4 py-3 text-gray-600">
+                      {{ day.totalRainfall }} mm
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="lg:col-span-7 space-y-6">
+            <!-- Current Weather Card -->
+            <div
+              class="bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl shadow-2xl p-8 text-white"
+            >
+              <h3 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                <span>☀️</span> Current Weather
+              </h3>
+              <div class="grid md:grid-cols-3 gap-6 items-center">
+                <!-- Weather Icon & Temp -->
+                <div
+                  class="flex items-center justify-center md:justify-start gap-4"
+                >
+                  <img
+                    :src="getWeatherIconUrl(currentWeather.icon)"
+                    :alt="currentWeather.description"
+                    class="w-24 h-24 drop-shadow-lg"
+                  />
+                  <div>
+                    <div class="text-5xl font-bold">
+                      {{ currentWeather.temp }}°C
+                    </div>
+                    <div class="text-lg capitalize opacity-90">
+                      {{ currentWeather.description }}
+                    </div>
+                  </div>
                 </div>
-                <div class="flex justify-between">
-                  <span class="text-gray-600">Humidity:</span>
-                  <span class="font-semibold text-gray-800"
-                    >{{ day.avgHumidity }}%</span
+
+                <!-- Details Grid -->
+                <div class="md:col-span-2 grid grid-cols-2 gap-4">
+                  <div class="bg-white/20 backdrop-blur-sm rounded-xl p-4">
+                    <p class="text-sm opacity-80">Feels like</p>
+                    <p class="text-2xl font-bold">
+                      {{ currentWeather.feelsLike }}°C
+                    </p>
+                  </div>
+                  <div class="bg-white/20 backdrop-blur-sm rounded-xl p-4">
+                    <p class="text-sm opacity-80">Humidity</p>
+                    <p class="text-2xl font-bold">
+                      {{ currentWeather.humidity }}%
+                    </p>
+                  </div>
+                  <div class="bg-white/20 backdrop-blur-sm rounded-xl p-4">
+                    <p class="text-sm opacity-80">Wind</p>
+                    <p class="text-2xl font-bold">
+                      {{ currentWeather.windSpeed }} m/s
+                    </p>
+                  </div>
+                  <div
+                    v-if="currentWeather.rainfall > 0"
+                    class="bg-white/20 backdrop-blur-sm rounded-xl p-4"
                   >
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-gray-600">Wind:</span>
-                  <span class="font-semibold text-gray-800"
-                    >{{ day.avgWindSpeed }} m/s</span
-                  >
-                </div>
-                <div v-if="day.totalRainfall > 0" class="flex justify-between">
-                  <span class="text-gray-600">Rain:</span>
-                  <span class="font-semibold text-blue-600"
-                    >{{ day.totalRainfall }} mm</span
-                  >
+                    <p class="text-sm opacity-80">Rainfall</p>
+                    <p class="text-2xl font-bold">
+                      {{ currentWeather.rainfall }} mm
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        <!-- Charts Section -->
-        <div class="grid md:grid-cols-2 gap-6">
-        <!-- Temperature Chart -->
-        <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6">
-            <h3 class="text-xl font-bold text-gray-800 mb-4">🌡️ Temperature Trend (Every 6 Hours)</h3>
-            <div class="relative h-64 px-4 pb-12">
-                <!-- Chart area with proper spacing -->
-                <div class="relative h-full flex items-end justify-between">
+            <!-- Next 3 Days Forecast Cards -->
+            <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6">
+              <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                📅 Next 3 Days Detailed Forecast
+              </h3>
+              <div class="grid md:grid-cols-3 gap-6">
+                <div
+                  v-for="day in threeDayForecast"
+                  :key="day.date"
+                  class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow border border-gray-200"
+                >
+                  <div class="text-lg font-bold text-gray-800 mb-3">
+                    {{ day.date }}
+                  </div>
+                  <div class="flex items-center justify-between mb-4">
+                    <img
+                      :src="getWeatherIconUrl(day.icon)"
+                      :alt="day.description"
+                      class="w-16 h-16"
+                    />
+                    <div class="text-3xl font-bold text-blue-600">
+                      {{ day.minTemp }}° - {{ day.maxTemp }}°
+                    </div>
+                  </div>
+                  <div class="text-sm text-gray-600 capitalize mb-4">
+                    {{ day.description }}
+                  </div>
+                  <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                      <span class="text-gray-600">Feels like:</span>
+                      <span class="font-semibold text-gray-800"
+                        >{{ day.avgFeelsLike }}°C</span
+                      >
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-gray-600">Humidity:</span>
+                      <span class="font-semibold text-gray-800"
+                        >{{ day.avgHumidity }}%</span
+                      >
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-gray-600">Wind:</span>
+                      <span class="font-semibold text-gray-800"
+                        >{{ day.avgWindSpeed }} m/s</span
+                      >
+                    </div>
+                    <div
+                      v-if="day.totalRainfall > 0"
+                      class="flex justify-between"
+                    >
+                      <span class="text-gray-600">Rain:</span>
+                      <span class="font-semibold text-blue-600"
+                        >{{ day.totalRainfall }} mm</span
+                      >
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Charts Section -->
+            <div class="grid md:grid-cols-2 gap-6">
+              <!-- Temperature Chart -->
+              <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">
+                  🌡️ Temperature Trend (Every 6 Hours)
+                </h3>
+                <div class="relative h-64 px-4 pb-12">
+                  <!-- Chart area with proper spacing -->
+                  <div class="relative h-full flex items-end justify-between">
                     <!-- SVG Line -->
-                    <svg class="absolute inset-0 w-full h-full" viewBox="0 0 532 208" style="pointer-events: none;" preserveAspectRatio="none">
+                    <svg class="absolute inset-0 w-full h-full" viewBox="0 0 532 208" style="pointer-events: none"
+                      preserveAspectRatio="none">
                       <polyline :points="getTemperatureLinePoints()" fill="none" stroke="rgb(59, 130, 246)" stroke-width="3"
                         stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
                     </svg>
-        
+            
                     <!-- Data Points -->
                     <div v-for="(point, index) in temperatureChart" :key="index" class="flex flex-col items-center relative"
-                        :style="{ marginBottom: (point.temp * 3) + 'px' }">
-                        <!-- Temperature Label -->
-                        <div class="text-xs font-bold text-blue-600 mb-1">{{ point.temp }}°</div>
-        
-                        <!-- Point Circle -->
-                        <div class="w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-lg z-10"></div>
+                      :style="{ marginBottom: (point.temp * 3) + 'px' }">
+                      <!-- Temperature Label -->
+                      <div class="text-xs font-bold text-blue-600 mb-1">
+                        {{ point.temp }}°
+                      </div>
+            
+                      <!-- Point Circle -->
+                      <div class="w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-lg z-10"></div>
                     </div>
-                </div>
-        
-                <!-- Time Labels (outside the chart area) -->
-                <div class="flex justify-between mt-2">
+                  </div>
+            
+                  <!-- Time Labels (outside the chart area) -->
+                  <div class="flex justify-between mt-2">
                     <div v-for="(point, index) in temperatureChart" :key="'label-' + index"
-                        class="text-xs text-gray-600 text-center flex-1">
-                        {{ point.time }}
+                      class="text-xs text-gray-600 text-center flex-1">
+                      {{ point.time }}
                     </div>
-                </div>
-            </div>
-        </div>
-
-          <!-- Rainfall Chart -->
-          <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6">
-            <h3 class="text-xl font-bold text-gray-800 mb-4">
-              💧 Rainfall Levels
-            </h3>
-            <div class="flex items-end justify-around h-64 gap-4">
-              <div
-                v-for="(point, index) in rainfallChart"
-                :key="index"
-                class="flex flex-col items-center gap-2 flex-1"
-              >
-                <div class="text-xs font-bold text-blue-600">
-                  {{ point.rainfall }}mm
-                </div>
-                <div
-                  class="w-full bg-gradient-to-t from-blue-400 to-blue-200 rounded-t-lg transition-all hover:from-blue-500 hover:to-blue-300"
-                  :style="{
-                    height: parseFloat(point.rainfall) * 10 + 'px',
-                    minHeight: '10px'
-                  }"
-                ></div>
-                <div class="text-xs text-gray-600 text-center leading-tight">
-                  {{ point.date }}
+                  </div>
                 </div>
               </div>
-            </div>
+            
+              <!-- Rainfall Chart -->
+              <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">
+                  💧 Rainfall Levels
+                </h3>
+                <div class="flex items-end justify-around h-64 gap-4">
+                  <div v-for="(point, index) in rainfallChart" :key="index" class="flex flex-col items-center gap-2 flex-1">
+                    <div class="text-xs font-bold text-blue-600">
+                      {{ point.rainfall }}mm
+                    </div>
+                    <div
+                      class="w-full bg-gradient-to-t from-blue-400 to-blue-200 rounded-t-lg transition-all hover:from-blue-500 hover:to-blue-300"
+                      :style="{
+                                height: parseFloat(point.rainfall) * 10 + 'px',
+                                minHeight: '10px'
+                              }"></div>
+                    <div class="text-xs text-gray-600 text-center leading-tight">
+                      {{ point.date }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+          </div>
           </div>
         </div>
-      </div>
-
-      <!-- Initial state message -->
-      <div
-        v-else
-        class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-16 text-center"
-      >
-        <div class="text-6xl mb-4">🔍</div>
-        <p class="text-2xl text-gray-600 font-medium">
-          Search for a city to see the weather forecast
-        </p>
+        </template>
+        <!-- Initial state message (now properly adjacent to v-if) -->
+        <div v-else
+          class="lg:col-span-12 mt-20 bg-zinc-900/95 backdrop-blur-sm rounded-2xl shadow-md shadow-zinc-400 p-16 text-center max-w-2xl mx-auto">
+          <div class="text-6xl mb-4">🔍</div>
+          <p class="text-2xl text-zinc-300 font-medium">
+            Search for a city to see the weather forecast
+          </p>
+        </div>
       </div>
     </div>
 
