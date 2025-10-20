@@ -91,3 +91,38 @@ app.get('/api/air_pollution', async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch air pollution data' });
     }
 });
+
+// Map tile proxy endpoint
+app.get('/api/map-tile/:layer/:z/:x/:y', async (req, res) => {
+    try {
+        const { layer, z, x, y } = req.params;
+
+        // Validate layer name
+        const validLayers = ['temp_new', 'precipitation_new', 'clouds_new', 'wind_new', 'pressure_new'];
+        if (!validLayers.includes(layer)) {
+            return res.status(400).json({ error: 'Invalid layer' });
+        }
+
+        // Fetch tile from OpenWeather
+        const tileUrl = `https://tile.openweathermap.org/map/${layer}/${z}/${x}/${y}.png?appid=${apiKey}`;
+        const response = await fetch(tileUrl);
+
+        if (!response.ok) {
+            return res.status(response.status).json({ error: 'Failed to fetch tile' });
+        }
+
+        // Get image as buffer
+        const imageBuffer = await response.arrayBuffer();
+
+        // Set proper headers for PNG image
+        res.set('Content-Type', 'image/png');
+        res.set('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+
+        // Send the tile image
+        res.send(Buffer.from(imageBuffer));
+
+    } catch (error) {
+        console.error('Error fetching map tile:', error);
+        res.status(500).json({ error: 'Failed to fetch map tile' });
+    }
+});

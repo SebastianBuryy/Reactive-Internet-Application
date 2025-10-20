@@ -17,7 +17,20 @@ createApp({
             rainfallChart: [],
             airPollutionData: null,
             airQualityWarnings: [],
-            overallAQI: null
+            overallAQI: null,
+            // Map related
+            map: null,
+            weatherTileLayer: null,
+            activeMapLayer: 'temp',
+            mapLayers: [
+                { id: 'temp', name: 'Temperature', icon: '🌡️', layer: 'temp_new' },
+                { id: 'precipitation', name: 'Precipitation', icon: '🌧️', layer: 'precipitation_new' },
+                { id: 'clouds', name: 'Clouds', icon: '☁️', layer: 'clouds_new' },
+                { id: 'wind', name: 'Wind Speed', icon: '💨', layer: 'wind_new' },
+                { id: 'pressure', name: 'Pressure', icon: '📊', layer: 'pressure_new' }
+            ],
+            cityMarker: null,
+            showMapLegend: true,
         };
     },
     methods: {
@@ -68,8 +81,13 @@ createApp({
             this.selectedCity = city;
             this.searchQuery = this.formatCityDisplay(city);
             this.suggestions = [];
+
             await this.getWeather(city.lat, city.lon);
             await this.getAirPollution(city.lat, city.lon);
+
+            this.$nextTick(() => {
+                this.initialiseMap(city.lat, city.lon);
+            });
         },
         async getWeather(lat, lon) {
             try {
@@ -328,6 +346,79 @@ createApp({
             });
 
             return points.join(' ');
-        }
+        },
+
+        initialiseMap(lat, lon) {
+            // If map doesn't exist, create it
+            if (!this.map) {
+                this.map = L.map('weather-map').setView([lat, lon], 10);
+
+                // Add base map (OpenStreetMap)
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors',
+                    maxZoom: 18
+                }).addTo(this.map);
+
+                // Add weather overlay
+                this.addWeatherLayer(this.activeMapLayer);
+            } else {
+                // Map exists, just update view
+                this.map.setView([lat, lon], 10);
+            }
+
+            // Remove old marker if exists
+            if (this.cityMarker) {
+                this.map.removeLayer(this.cityMarker);
+            }
+
+            // Add city marker
+            this.cityMarker = L.marker([lat, lon])
+                .addTo(this.map)
+                .bindPopup(`<b>${this.selectedCity.name}</b><br>${this.selectedCity.country}`)
+                .openPopup();
+        },
+
+        addWeatherLayer(layerId) {
+            const layer = this.mapLayers.find(l => l.id === layerId);
+            if (!layer) return;
+
+            // Remove old weather layer if exists
+            if (this.weatherTileLayer) {
+                this.map.removeLayer(this.weatherTileLayer);
+            }
+
+            // Add new weather layer through backend proxy
+            this.weatherTileLayer = L.tileLayer(
+                `http://localhost:3000/api/map-tile/${layer.layer}/{z}/{x}/{y}`,
+                {
+                    attribution: '© OpenWeatherMap',
+                    opacity: 1,
+                    maxZoom: 18
+                }
+            ).addTo(this.map);
+        },
+
+        toggleMapLayer(layerId) {
+            this.activeMapLayer = layerId;
+            if (this.map) {
+                this.addWeatherLayer(layerId);
+            }
+        },
+
+        getActiveLegendUrl() {
+            const legendMap = {
+                'temp': 'https://openweathermap.org/img/wn/legend_temp.png',
+                'precipitation': 'https://openweathermap.org/img/wn/legend_rain.png',
+                'clouds': 'https://openweathermap.org/img/wn/legend_clouds.png',
+                'wind': 'https://openweathermap.org/img/wn/legend_wind.png',
+                'pressure': 'https://openweathermap.org/img/wn/legend_pressure.png'
+            };
+            return legendMap[this.activeMapLayer] || legendMap['temp'];
+        },
+
+        getActiveLegendTitle() {
+            const layer = this.mapLayers.find(l => l.id === this.activeMapLayer);
+            return layer ? layer.name + ' Scale' : 'Legend';
+        },
     },
 }).mount('#app');
