@@ -1,157 +1,3 @@
-// const { createApp } = Vue;
-
-// createApp({
-//     data() {
-//         return {
-//             searchQuery: '',
-//             suggestions: [],
-//             selectedCity: null,
-//             weatherData: null,
-//             searchTimeout: null,
-//             // Processed weather info
-//             needsUmbrella: false,
-//             tempCategory: '',
-//             threeDayForecast: []
-//         };
-//     },
-//     methods: {
-//         formatCityDisplay(city) {
-//             if (city.state && city.state == city.name) {
-//                 return `${city.name}, ${city.country}`;
-//             }
-//             else if (!city.state) {
-//                 return `${city.name}, ${city.country}`;
-//             }
-//             return `${city.name}, ${city.state}, ${city.country}`;
-//         },
-//         getCities() {
-//             clearTimeout(this.searchTimeout);
-
-//             if (this.searchQuery.length < 2) {
-//                 this.suggestions = [];
-//                 return;
-//             }
-
-//             // Wait 300ms after the user stops typing to make the API call
-//             this.searchTimeout = setTimeout(async () => {
-//                 try {
-//                     const encodedQuery = encodeURIComponent(this.searchQuery);
-//                     const response = await fetch(`http://localhost:3000/api/geocode?city=${encodedQuery}`);
-//                     const data = await response.json();
-
-//                     // Remove duplicates based on name, state, and country
-//                     const uniqueCities = [];
-//                     const seen = new Set();
-
-//                     for (const city of data) {
-//                         const key = `${city.name}-${city.state || ''}-${city.country}`;
-//                         if (!seen.has(key)) {
-//                             seen.add(key);
-//                             uniqueCities.push(city);
-//                         }
-//                     }
-
-//                     this.suggestions = uniqueCities;
-
-//                 } catch (error) {
-//                     console.error("Error fetching city data:", error);
-//                 }
-//             }, 300);
-//         },
-//         async selectCity(city) {
-//             this.selectedCity = city;
-//             this.searchQuery = this.formatCityDisplay(city);
-//             this.suggestions = [];
-//             await this.getWeather(city.lat, city.lon);
-//         },
-//         async getWeather(lat, lon) {
-//             try {
-//                 const response = await fetch(`http://localhost:3000/api/weather?lat=${lat}&lon=${lon}`);
-//                 this.weatherData = await response.json();
-//                 this.processWeatherData();
-//             } catch (error) {
-//                 console.error("Error fetching weather data:", error);
-//             }
-//         },
-//         processWeatherData() {
-//             if (!this.weatherData || !this.weatherData.list) return;
-
-//             // Get forecasts for next 3 days only
-//             const now = new Date();
-//             const threeDaysFromNow = new Date(now.getTime() + (3 * 24 * 60 * 60 * 1000));
-
-//             const next3Days = this.weatherData.list.filter(item => {
-//                 const forecastDate = new Date(item.dt * 1000);
-//                 return forecastDate >= now && forecastDate <= threeDaysFromNow;
-//             });
-
-//             // Check if umbrella is needed (any rain in next 3 days)
-//             this.needsUmbrella = next3Days.some(item => item.rain);
-
-//             // Find temperature range for packing recommendation
-//             const temps = next3Days.map(item => item.main.temp);
-//             const minTemp = Math.min(...temps);
-//             const maxTemp = Math.max(...temps);
-
-//             // Determine temperature category based on the range
-//             if (maxTemp < 8) {
-//                 this.tempCategory = 'Cold';
-//             } else if (minTemp > 24) {
-//                 this.tempCategory = 'Hot';
-//             } else if (minTemp < 8 && maxTemp > 24) {
-//                 this.tempCategory = 'Cold and Hot'; // Pack for both
-//             } else if (minTemp < 8) {
-//                 this.tempCategory = 'Cold and Mild';
-//             } else if (maxTemp > 24) {
-//                 this.tempCategory = 'Mild and Hot';
-//             } else {
-//                 this.tempCategory = 'Mild';
-//             }
-
-//             // Group by day for the summary table
-//             this.threeDayForecast = this.groupByDay(next3Days);
-//         },
-
-//         groupByDay(forecasts) {
-//             const days = {};
-
-//             forecasts.forEach(item => {
-//                 const date = new Date(item.dt * 1000);
-//                 const dayKey = date.toLocaleDateString('en-GB', {
-//                     weekday: 'short',
-//                     year: 'numeric',
-//                     month: 'short',
-//                     day: 'numeric'
-//                 });
-
-//                 if (!days[dayKey]) {
-//                     days[dayKey] = {
-//                         date: dayKey,
-//                         temps: [],
-//                         windSpeeds: [],
-//                         rainfall: 0
-//                     };
-//                 }
-
-//                 days[dayKey].temps.push(item.main.temp);
-//                 days[dayKey].windSpeeds.push(item.wind.speed);
-//                 if (item.rain && item.rain['3h']) {
-//                     days[dayKey].rainfall += item.rain['3h'];
-//                 }
-//             });
-
-//             // Calculate averages and format
-//             return Object.values(days).map(day => ({
-//                 date: day.date,
-//                 minTemp: Math.round(Math.min(...day.temps)),
-//                 maxTemp: Math.round(Math.max(...day.temps)),
-//                 avgWindSpeed: (day.windSpeeds.reduce((a, b) => a + b, 0) / day.windSpeeds.length).toFixed(1),
-//                 totalRainfall: day.rainfall.toFixed(1)
-//             }));
-//         },
-//     },
-// }).mount('#app');
-
 const { createApp } = Vue;
 
 createApp({
@@ -246,13 +92,17 @@ createApp({
                 time: new Date(firstItem.dt * 1000)
             };
 
-            // Get forecasts for next 3 days
-            const now = new Date();
-            const threeDaysFromNow = new Date(now.getTime() + (3 * 24 * 60 * 60 * 1000));
+            // All data including today (for charts - 20th, 21st, 22nd, 23rd)
+            const allData = this.weatherData.list;
+
+            // Filter to exclude today for the forecast tables/cards (21st, 22nd, 23rd only)
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(0, 0, 0, 0);
 
             const next3Days = this.weatherData.list.filter(item => {
                 const forecastDate = new Date(item.dt * 1000);
-                return forecastDate >= now && forecastDate <= threeDaysFromNow;
+                return forecastDate >= tomorrow;
             });
 
             // Check if umbrella is needed (any rain in next 3 days)
@@ -282,7 +132,7 @@ createApp({
             this.threeDayForecast = this.groupByDay(next3Days);
 
             // Prepare chart data
-            this.prepareChartData(next3Days);
+            this.prepareChartData(allData);
         },
 
         groupByDay(forecasts) {
@@ -350,7 +200,8 @@ createApp({
                     time: new Date(item.dt * 1000).toLocaleString('en-GB', {
                         day: 'numeric',
                         month: 'short',
-                        hour: '2-digit'
+                        hour: 'numeric',
+                        hour12: true,
                     }),
                     temp: Math.round(item.main.temp)
                 }));
@@ -385,14 +236,15 @@ createApp({
         getTemperatureLinePoints() {
             if (!this.temperatureChart || this.temperatureChart.length === 0) return '';
 
-            const chartHeight = 256; // h-64 = 16rem = 256px
-            const bottomPadding = 48; // pb-12 = 3rem = 48px for labels
+            const chartWidth = 532; // w-full in SVG viewBox
+            const chartHeight = 208; // h-64 = 16rem = 256px
+            const bottomPadding = 8; // pb-6 = 1.5rem = 24px for labels
             const availableHeight = chartHeight - bottomPadding;
 
             const points = this.temperatureChart.map((point, index) => {
-                const x = (index / (this.temperatureChart.length - 1)) * 100;
+                const x = (index / (this.temperatureChart.length - 1)) * chartWidth;
                 const y = availableHeight - (point.temp * 3);
-                return `${x}%,${y}`;
+                return `${x},${y}`;
             });
 
             return points.join(' ');
