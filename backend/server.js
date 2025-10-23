@@ -13,6 +13,27 @@ app.listen(port, () => {
 
 const apiKey = process.env.OPENWEATHER_API_KEY;
 
+// Google Geocoding API
+app.get('/api/geocode', async (req, res) => {
+    try {
+        const { city } = req.query;
+
+        console.log("Received geocode request for city:", city);
+
+        if (!city) {
+            return res.status(400).json({ error: 'City parameter is required' });
+        }
+
+        const response = await fetch(`http://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(city)}&limit=5&appid=${apiKey}`);
+        const data = await response.json();
+        console.log("Geocode data fetched:", data);
+        res.json(data);
+    } catch (error) {
+        console.error('Error fetching geocode data:', error);
+        res.status(500).json({ error: 'Failed to fetch geocode data' });
+    }
+});
+
 // Geocoding API endpoint
 app.get('/api/geocode', async (req, res) => {
     try {
