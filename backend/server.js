@@ -12,25 +12,49 @@ app.listen(port, () => {
 });
 
 const apiKey = process.env.OPENWEATHER_API_KEY;
+const googleMapsApiKey = process.env.GOOGLEMAPSPLATFORM_API_KEY;
 
-// Google Geocoding API
-app.get('/api/geocode', async (req, res) => {
+// Google Autocomplete endpoint
+app.get('/api/places/autocomplete', async (req, res) => {
     try {
-        const { city } = req.query;
+        const { input } = req.query;
 
-        console.log("Received geocode request for city:", city);
-
-        if (!city) {
-            return res.status(400).json({ error: 'City parameter is required' });
+        if (!input || input.length < 2) {
+            return res.json({ predictions: [] });
         }
 
-        const response = await fetch(`http://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(city)}&limit=5&appid=${apiKey}`);
+        const url = new URL('https://maps.googleapis.com/maps/api/place/autocomplete/json');
+        url.searchParams.append('input', input);
+        url.searchParams.append('types', '(cities)');
+        url.searchParams.append('key', googleMapsApiKey);
+
+        const response = await fetch(url);
         const data = await response.json();
-        console.log("Geocode data fetched:", data);
+
         res.json(data);
     } catch (error) {
-        console.error('Error fetching geocode data:', error);
-        res.status(500).json({ error: 'Failed to fetch geocode data' });
+        console.error('Autocomplete error:', error);
+        res.status(500).json({ error: 'Failed to fetch suggestions' });
+    }
+});
+
+// Google Place details endpoint
+app.get('/api/places/details', async (req, res) => {
+    try {
+        const { place_id } = req.query;
+
+        const url = new URL('https://maps.googleapis.com/maps/api/place/details/json');
+        url.searchParams.append('place_id', place_id);
+        url.searchParams.append('fields', 'name,geometry,formatted_address');
+        url.searchParams.append('key', googleMapsApiKey);
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        res.json(data);
+    } catch (error) {
+        console.error('Place details error:', error);
+        res.status(500).json({ error: 'Failed to fetch place details' });
     }
 });
 

@@ -405,17 +405,6 @@ createApp({
             }
         },
 
-        getActiveLegendUrl() {
-            const legendMap = {
-                'temp': 'https://openweathermap.org/img/wn/legend_temp.png',
-                'precipitation': 'https://openweathermap.org/img/wn/legend_rain.png',
-                'clouds': 'https://openweathermap.org/img/wn/legend_clouds.png',
-                'wind': 'https://openweathermap.org/img/wn/legend_wind.png',
-                'pressure': 'https://openweathermap.org/img/wn/legend_pressure.png'
-            };
-            return legendMap[this.activeMapLayer] || legendMap['temp'];
-        },
-
         getActiveLegendTitle() {
             const layer = this.mapLayers.find(l => l.id === this.activeMapLayer);
             return layer ? layer.name + ' Scale' : 'Legend';
