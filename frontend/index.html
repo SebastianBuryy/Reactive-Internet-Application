@@ -13,6 +13,9 @@
       rel="stylesheet"
     />
 
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"/>
+
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
@@ -34,41 +37,43 @@
   </head>
 
   <body
-    class="bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 min-h-screen flex flex-col"
+    class="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 min-h-screen flex flex-col"
   >
 
     <div id="app" class="px-4 py-8 pt-24 w-full flex-grow">
       <!-- Header -->
       <header
-        class="fixed top-0 left-0 right-0 bg-zinc-900 shadow-lg shadow-zinc-400/50 z-50 px-8 py-4"
+        class="fixed top-0 left-0 right-0 bg-slate-950 shadow-lg shadow-emerald-300/50 z-50 px-8 py-4"
       >
         <div class="flex items-center justify-between gap-8">
           <!-- Logo/Brand -->
-          <h1 class="text-2xl font-bold text-zinc-300 whitespace-nowrap">
+          <h1 class="text-2xl font-bold text-emerald-200 whitespace-nowrap">
             AuroraView
           </h1>
 
           <!-- Search Component -->
           <div class="search-container relative flex-1 max-w-sm">
+            <!-- Icon positioned inside on the left -->
+            <i class="fas fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-emerald-200 pointer-events-none"></i>
             <input
               type="text"
               placeholder="Search for a city..."
               v-model="searchQuery"
-              @input="getCities"
-              class="w-full px-6 py-2 text-lg text-zinc-100 placeholder-zinc-300 rounded-xl border-2 border-zinc-300 bg-zinc-900 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              @input="getPredictions"
+              class="w-full pl-12 px-6 py-2 text-lg text-emerald-100 placeholder-emerald-100 rounded-xl border-2 border-emerald-200 bg-slate-900 shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-200 focus:border-emerald-200 transition-all"
             />
 
             <div
-              v-if="suggestions.length > 0"
-              class="absolute top-full left-0 right-0 mt-2 bg-zinc-800 rounded-xl shadow-2xl max-h-80 overflow-y-auto z-50"
+              v-if="predictions.length > 0"
+              class="absolute top-full left-0 right-0 mt-2 bg-slate-900 rounded-xl shadow-2xl max-h-80 overflow-y-auto z-50"
             >
               <div
-                v-for="city in suggestions"
-                :key="city.lat + city.lon"
-                @click="selectCity(city)"
-                class="px-6 py-3 hover:bg-zinc-700 cursor-pointer transition-colors text-white border-b border-gray-100 last:border-b-0 first:rounded-t-xl last:rounded-b-xl"
+                v-for="prediction in predictions"
+                :key="this.lat + this.lon"
+                @click="selectPlace(prediction)"
+                class="px-6 py-3 hover:bg-slate-950 cursor-pointer transition-colors text-emerald-100 border-b border-emerald-50 last:border-b-0 first:rounded-t-xl last:rounded-b-xl"
               >
-                {{ formatCityDisplay(city) }}
+                {{ prediction.placePrediction.text.text }}
               </div>
             </div>
           </div>
@@ -87,11 +92,11 @@
         <div class="lg:col-span-5 space-y-6">
 
             <!-- Packing Recommendations -->
-            <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6">
+            <div class="bg-slate-950 backdrop-blur-sm rounded-2xl ring-2 ring-emerald-300/50 shadow-md shadow-emerald-300 hover:shadow-lg hover:shadow-emerald-300 p-6">
               <h3
-                class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2"
+                class="text-2xl font-bold text-emerald-50 mb-4 flex items-center gap-2"
               >
-                <span>🎒</span> Packing Recommendations
+                <i class="fa-solid fa-suitcase text-emerald-300"></i> Packing Recommendations
               </h3>
               <div class="grid md:grid-cols-2 gap-4">
                 <div
@@ -143,12 +148,12 @@
             <!-- Air Quality Warnings -->
             <div
               v-if="airPollutionData"
-              class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6"
+              class="bg-slate-950 backdrop-blur-sm rounded-2xl ring-2 ring-emerald-300/50 shadow-md shadow-emerald-300 hover:shadow-lg hover:shadow-emerald-300 p-6"
             >
               <h3
-                class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2"
+                class="text-2xl font-bold text-emerald-50 mb-4 flex items-center gap-2"
               >
-                <span>💨</span> Air Quality
+                <i class="fa-solid fa-medal text-emerald-300"></i> Air Quality
               </h3>
 
               <!-- Overall AQI -->
@@ -295,10 +300,10 @@
           <div class="lg:col-span-7 space-y-6">
             <!-- Current Weather Card -->
             <div
-              class="bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl shadow-2xl p-8 text-white"
+              class="bg-gradient-to-br from-emerald-300 to-emerald-400 rounded-2xl shadow-2xl p-8 text-white"
             >
               <h3 class="text-2xl font-bold mb-6 flex items-center gap-2">
-                <span>☀️</span> Current Weather
+                <span>☀️</span> Current Weather in {{ selectedCity }}
               </h3>
               <div class="grid md:grid-cols-3 gap-6 items-center">
                 <!-- Weather Icon & Temp -->
@@ -512,9 +517,10 @@
               class="absolute bottom-4 right-4 bg-white/95 backdrop-blur-sm rounded-lg shadow-xl p-4 border-2 border-gray-300 z-[1000]">
               <div class="flex items-center justify-between mb-2">
                 <h4 class="font-bold text-sm text-gray-800">{{ getActiveLegendTitle() }}</h4>
-                <button @click="showMapLegend = false" class="text-gray-500 hover:text-gray-700 font-bold">✕</button>
               </div>
-              <img :src="getActiveLegendUrl()" :alt="getActiveLegendTitle() + ' Legend'" class="w-48" />
+
+              <!-- Dynamic Legend Content -->
+              <div v-html="getActiveLegendHTML()"></div>
             </div>
           </div>
         
@@ -540,8 +546,8 @@
     </div>
 
     <!-- Footer -->
-    <footer class="bg-inherit shadow-lg shadow-zinc-100 p-4 text-center">
-      <p class="text-zinc-100">
+    <footer class="bg-inherit shadow-lg shadow-teal-100 p-4 text-center">
+      <p class="text-emerald-100">
         © 2025 - Built with ❤️ by
         <a
           href="https://github.com/sebastianburyy"

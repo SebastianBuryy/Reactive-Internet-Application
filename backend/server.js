@@ -14,23 +14,32 @@ app.listen(port, () => {
 const apiKey = process.env.OPENWEATHER_API_KEY;
 const googleMapsApiKey = process.env.GOOGLEMAPSPLATFORM_API_KEY;
 
-// Google Autocomplete endpoint
-app.get('/api/places/autocomplete', async (req, res) => {
+// Google Places Autocomplete Data endpoint
+app.get('/api/autocomplete', async (req, res) => {
     try {
         const { input } = req.query;
 
-        if (!input || input.length < 2) {
-            return res.json({ predictions: [] });
+        if (!input) {
+            return res.status(400).json({ error: 'Input parameter is required' });
         }
 
-        const url = new URL('https://maps.googleapis.com/maps/api/place/autocomplete/json');
-        url.searchParams.append('input', input);
-        url.searchParams.append('types', '(cities)');
-        url.searchParams.append('key', googleMapsApiKey);
+        const url = 'https://places.googleapis.com/v1/places:autocomplete';
 
-        const response = await fetch(url);
+        const requestBody = {
+            input: input,
+            includedPrimaryTypes: ['locality', 'administrative_area_level_1'],
+        };
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Goog-Api-Key': googleMapsApiKey,
+            },
+            body: JSON.stringify(requestBody),
+        });
+
         const data = await response.json();
-
         res.json(data);
     } catch (error) {
         console.error('Autocomplete error:', error);
@@ -38,19 +47,25 @@ app.get('/api/places/autocomplete', async (req, res) => {
     }
 });
 
-// Google Place details endpoint
-app.get('/api/places/details', async (req, res) => {
+// Google Place Details endpoint
+app.get('/api/places-details', async (req, res) => {
     try {
-        const { place_id } = req.query;
+        const { placeId } = req.query;
 
-        const url = new URL('https://maps.googleapis.com/maps/api/place/details/json');
-        url.searchParams.append('place_id', place_id);
-        url.searchParams.append('fields', 'name,geometry,formatted_address');
-        url.searchParams.append('key', googleMapsApiKey);
+        if (!placeId) {
+            return res.status(400).json({ error: 'placeId parameter is required' });
+        }
 
-        const response = await fetch(url);
+        const url = `https://places.googleapis.com/v1/places/${placeId}?fields=location,displayName`;
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Goog-Api-Key': googleMapsApiKey,
+            },
+        });
         const data = await response.json();
-
         res.json(data);
     } catch (error) {
         console.error('Place details error:', error);

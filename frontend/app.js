@@ -4,7 +4,9 @@ createApp({
     data() {
         return {
             searchQuery: '',
-            suggestions: [],
+            predictions: [],
+            lat: null,
+            lon: null,
             selectedCity: null,
             weatherData: null,
             searchTimeout: null,
@@ -34,61 +36,51 @@ createApp({
         };
     },
     methods: {
-        formatCityDisplay(city) {
-            if (city.state && city.state == city.name) {
-                return `${city.name}, ${city.country}`;
-            }
-            else if (!city.state) {
-                return `${city.name}, ${city.country}`;
-            }
-            return `${city.name}, ${city.state}, ${city.country}`;
-        },
-        getCities() {
-            clearTimeout(this.searchTimeout);
-
+        async getPredictions() {
             if (this.searchQuery.length < 2) {
-                this.suggestions = [];
+                this.predictions = [];
                 return;
             }
 
-            // Wait 300ms after the user stops typing to make the API call
-            this.searchTimeout = setTimeout(async () => {
-                try {
-                    const encodedQuery = encodeURIComponent(this.searchQuery);
-                    const response = await fetch(`http://localhost:3000/api/geocode?city=${encodedQuery}`);
-                    const data = await response.json();
+            try {
+                const response = await fetch(`http://localhost:3000/api/autocomplete?input=${this.searchQuery}`);
+                const data = await response.json();
 
-                    // Remove duplicates based on name, state, and country
-                    const uniqueCities = [];
-                    const seen = new Set();
+                this.predictions = data.suggestions || [];
+            } catch (error) {
+                console.error('Error fetching predictions:', error);
+                this.predictions = [];
+            }
+        },
 
-                    for (const city of data) {
-                        const key = `${city.name}-${city.state || ''}-${city.country}`;
-                        if (!seen.has(key)) {
-                            seen.add(key);
-                            uniqueCities.push(city);
-                        }
-                    }
+        async selectPlace(prediction) {
+            const placeId = prediction.placePrediction.placeId;
 
-                    this.suggestions = uniqueCities;
+            this.searchQuery = prediction.placePrediction.text.text;
+            this.selectedCity = prediction.placePrediction.text.text;
+            this.predictions = [];
 
-                } catch (error) {
-                    console.error("Error fetching city data:", error);
+            try {
+                const response = await fetch(`http://localhost:3000/api/places-details?placeId=${placeId}`);
+                const data = await response.json();
+
+                if (data && data.location) {
+                    this.lat = data.location.latitude;
+                    this.lon = data.location.longitude;
+
+                    await this.getWeather(this.lat, this.lon);
+                    await this.getAirPollution(this.lat, this.lon);
+                    this.$nextTick(() => {
+                        this.initialiseMap(this.lat, this.lon);
+                    });
                 }
-            }, 300);
-        },
-        async selectCity(city) {
-            this.selectedCity = city;
-            this.searchQuery = this.formatCityDisplay(city);
-            this.suggestions = [];
+            } catch (error) {
+                console.error('Error fetching place details:', error);
+                return;
+            }
 
-            await this.getWeather(city.lat, city.lon);
-            await this.getAirPollution(city.lat, city.lon);
-
-            this.$nextTick(() => {
-                this.initialiseMap(city.lat, city.lon);
-            });
         },
+
         async getWeather(lat, lon) {
             try {
                 const response = await fetch(`http://localhost:3000/api/weather?lat=${lat}&lon=${lon}`);
@@ -374,7 +366,7 @@ createApp({
             // Add city marker
             this.cityMarker = L.marker([lat, lon])
                 .addTo(this.map)
-                .bindPopup(`<b>${this.selectedCity.name}</b><br>${this.selectedCity.country}`)
+                .bindPopup(`<b>${this.selectedCity}</b>`)
                 .openPopup();
         },
 
@@ -409,5 +401,168 @@ createApp({
             const layer = this.mapLayers.find(l => l.id === this.activeMapLayer);
             return layer ? layer.name + ' Scale' : 'Legend';
         },
+
+        getActiveLegendHTML() {
+            const legends = {
+                'temp': `
+                <div class="space-y-1 text-xs">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(252, 128, 20, 1)"></div>
+                        <span>30°C+ (Hot)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(255, 194, 40, 1)"></div>
+                        <span>25°C</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(255, 240, 40, 1)"></div>
+                        <span>20°C</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(194, 255, 40, 1)"></div>
+                        <span>10°C</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(35, 221, 221, 1)"></div>
+                        <span>0°C</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(32, 196, 232, 1)"></div>
+                        <span>-10°C</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(32, 140, 236, 1)"></div>
+                        <span>-20°C</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(130, 87, 219, 1)"></div>
+                        <span>-30°C (Cold)</span>
+                    </div>
+                </div>
+            `,
+                'precipitation': `
+                <div class="space-y-1 text-xs">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(20, 20, 255, 0.9)"></div>
+                        <span>140mm+ (Heavy)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(80, 80, 225, 0.7)"></div>
+                        <span>10mm</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(110, 110, 205, 0.5)"></div>
+                        <span>1mm</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(120, 120, 190, 0.3)"></div>
+                        <span>0.5mm</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(150, 150, 170, 0.2)"></div>
+                        <span>0.2mm</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(200, 150, 150, 0.1)"></div>
+                        <span>0.1mm (Light)</span>
+                    </div>
+                </div>
+            `,
+                'clouds': `
+                <div class="space-y-1 text-xs">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(240, 240, 255, 1)"></div>
+                        <span>100% (Overcast)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(244, 244, 255, 0.8)"></div>
+                        <span>70%</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(247, 247, 255, 0.5)"></div>
+                        <span>50%</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(250, 250, 255, 0.3)"></div>
+                        <span>30%</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(253, 253, 255, 0.1)"></div>
+                        <span>10% (Clear)</span>
+                    </div>
+                </div>
+            `,
+                'wind': `
+                <div class="space-y-1 text-xs">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(13, 17, 38, 1)"></div>
+                        <span>200+ m/s</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(70, 0, 175, 1)"></div>
+                        <span>100 m/s</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(116, 76, 172, 0.9)"></div>
+                        <span>50 m/s</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(63, 33, 59, 0.8)"></div>
+                        <span>25 m/s</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(179, 100, 188, 0.7)"></div>
+                        <span>15 m/s</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(238, 206, 206, 0.4)"></div>
+                        <span>5 m/s (Light)</span>
+                    </div>
+                </div>
+            `,
+                'pressure': `
+                <div class="space-y-1 text-xs">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(198, 0, 0, 1)"></div>
+                        <span>1080+ hPa</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(243, 54, 59, 1)"></div>
+                        <span>1060 hPa</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(251, 85, 21, 1)"></div>
+                        <span>1040 hPa</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(240, 184, 0, 1)"></div>
+                        <span>1020 hPa</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(176, 247, 32, 1)"></div>
+                        <span>1010 hPa</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(141, 231, 199, 1)"></div>
+                        <span>1000 hPa</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(75, 208, 214, 1)"></div>
+                        <span>980 hPa</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(0, 170, 255, 1)"></div>
+                        <span>960 hPa</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-4" style="background: rgba(0, 115, 255, 1)"></div>
+                        <span>940 hPa (Low)</span>
+                    </div>
+                </div>
+            `
+            };
+
+            return legends[this.activeMapLayer] || legends['temp'];
+        }
     },
 }).mount('#app');
