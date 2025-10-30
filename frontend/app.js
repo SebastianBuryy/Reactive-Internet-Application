@@ -225,6 +225,18 @@ createApp({
             this.prepareChartData(allData);
         },
 
+        getTempRangeDescription() {
+            const descriptions = {
+                'Cold': '(below 8°C)',
+                'Mild': '(8°C - 24°C)',
+                'Hot': '(above 24°C)',
+                'Cold and Mild': '(below 8°C to 24°C)',
+                'Mild and Hot': '(8°C to above 24°C)',
+                'Cold and Hot': '(varies widely: below 8°C to above 24°C)'
+            };
+            return descriptions[this.tempCategory] || '';
+        },
+
         groupByDay(forecasts) {
             const days = {};
 
@@ -343,7 +355,7 @@ createApp({
         initialiseMap(lat, lon) {
             // If map doesn't exist, create it
             if (!this.map) {
-                this.map = L.map('weather-map').setView([lat, lon], 10);
+                this.map = L.map('weather-map').setView([lat, lon], 6);
 
                 // Add base map (OpenStreetMap)
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -355,7 +367,7 @@ createApp({
                 this.addWeatherLayer(this.activeMapLayer);
             } else {
                 // Map exists, just update view
-                this.map.setView([lat, lon], 10);
+                this.map.setView([lat, lon], 6);
             }
 
             // Remove old marker if exists

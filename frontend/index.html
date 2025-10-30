@@ -47,8 +47,8 @@
       >
         <div class="flex items-center justify-between gap-8">
           <!-- Logo/Brand -->
-          <h1 class="text-2xl font-bold text-emerald-200 whitespace-nowrap">
-            AuroraView
+          <h1 class="text-2xl font-bold text-emerald-100 flex items-center gap-3">
+            <i class="fa-solid fa-cloud text-emerald-300"></i>AuroraView
           </h1>
 
           <!-- Search Component -->
@@ -82,7 +82,7 @@
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
         <template v-if="weatherData && selectedCity">
-        <div class="lg:col-span-5 space-y-6">
+        <div class="lg:col-span-5 space-y-6 flex flex-col">
 
             <!-- Packing Recommendations -->
             <div class="bg-gradient-to-br from-slate-950 to-slate-900 backdrop-blur-sm rounded-2xl ring-2 ring-emerald-300/50 shadow-md shadow-emerald-300 hover:shadow-lg hover:shadow-emerald-300 p-6">
@@ -93,9 +93,9 @@
               </h3>
               <div class="grid md:grid-cols-2 gap-4">
                 <div
-                  class="flex items-start gap-3 p-4 bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-xl"
+                  class="flex items-center gap-6 p-4 bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-xl"
                 >
-                  <i class="fa-solid fa-umbrella text-emerald-400"></i>
+                  <i class="fa-solid fa-umbrella text-emerald-400 fa-2xl"></i>
                   <div>
                     <p class="font-semibold text-slate-950">Umbrella:</p>
                     <p v-if="needsUmbrella" class="text-red-600 font-bold">
@@ -107,32 +107,15 @@
                   </div>
                 </div>
                 <div
-                  class="flex items-start gap-3 p-4 bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-xl"
+                  class="flex items-center gap-6 p-4 bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-xl"
                 >
-                  <i class="fa-solid fa-shirt text-emerald-400"></i>
+                  <i class="fa-solid fa-shirt text-emerald-400 fa-2xl"></i>
                   <div>
                     <p class="font-semibold text-slate-950">Clothing:</p>
                     <p class="text-gray-700 font-bold">
                       Pack for {{ tempCategory }} weather.
                     </p>
-                    <p
-                      v-if="tempCategory === 'Cold'"
-                      class="text-sm text-gray-600"
-                    >
-                      (below 8°C)
-                    </p>
-                    <p
-                      v-else-if="tempCategory === 'Mild'"
-                      class="text-sm text-gray-600"
-                    >
-                      (8°C - 24°C)
-                    </p>
-                    <p
-                      v-else-if="tempCategory === 'Hot'"
-                      class="text-sm text-gray-600"
-                    >
-                      (above 24°C)
-                    </p>
+                    <p class="text-gray-700">{{ getTempRangeDescription() }}</p>
                   </div>
                 </div>
               </div>
@@ -141,7 +124,7 @@
             <!-- Air Quality Warnings -->
             <div
               v-if="airPollutionData"
-              class="bg-gradient-to-br from-slate-950 to-slate-900 backdrop-blur-sm rounded-2xl ring-2 ring-emerald-300/50 shadow-md shadow-emerald-300 hover:shadow-lg hover:shadow-emerald-300 p-6"
+              class="flex-grow bg-gradient-to-br from-slate-950 to-slate-900 backdrop-blur-sm rounded-2xl ring-2 ring-emerald-300/50 shadow-md shadow-emerald-300 hover:shadow-lg hover:shadow-emerald-300 p-6"
             >
               <h3
                 class="text-2xl font-bold text-emerald-50 mb-4 flex items-center gap-2"
@@ -294,8 +277,8 @@
             <div
               class="bg-gradient-to-br from-slate-950 to-slate-900 rounded-2xl ring-2 ring-emerald-300/50 shadow-md shadow-emerald-300 hover:shadow-lg hover:shadow-emerald-300 p-8 text-white"
             >
-              <h3 class="text-2xl font-bold mb-6 flex items-center gap-2">
-                <i class="fa-solid fa-sun text-emerald-50"></i> Current Weather in {{ selectedCity }}
+              <h3 class="text-2xl text-emerald-50 font-bold mb-6 flex items-center gap-2">
+                <i class="fa-solid fa-sun text-emerald-300"></i> Current Weather in <span class="text-emerald-200">{{ selectedCity }}</span>
               </h3>
               <div class="grid md:grid-cols-3 gap-6 items-center">
                 <!-- Weather Icon & Temp -->
@@ -308,7 +291,7 @@
                     class="w-24 h-24 drop-shadow-lg"
                   />
                   <div>
-                    <div class="text-5xl font-bold">
+                    <div class="text-5xl text-emerald-200 font-bold">
                       {{ currentWeather.temp }}°C
                     </div>
                     <div class="text-lg capitalize opacity-90">
@@ -319,19 +302,19 @@
 
                 <!-- Details Grid -->
                 <div class="md:col-span-2 grid grid-cols-2 gap-4">
-                  <div class="bg-white/20 backdrop-blur-sm rounded-xl p-4">
+                  <div class="bg-slate-800 backdrop-blur-sm rounded-xl p-4">
                     <p class="text-sm opacity-80">Feels like</p>
                     <p class="text-2xl font-bold">
                       {{ currentWeather.feelsLike }}°C
                     </p>
                   </div>
-                  <div class="bg-white/20 backdrop-blur-sm rounded-xl p-4">
+                  <div class="bg-slate-800 backdrop-blur-sm rounded-xl p-4">
                     <p class="text-sm opacity-80">Humidity</p>
                     <p class="text-2xl font-bold">
                       {{ currentWeather.humidity }}%
                     </p>
                   </div>
-                  <div class="bg-white/20 backdrop-blur-sm rounded-xl p-4">
+                  <div class="bg-slate-800 backdrop-blur-sm rounded-xl p-4">
                     <p class="text-sm opacity-80">Wind</p>
                     <p class="text-2xl font-bold">
                       {{ currentWeather.windSpeed }} m/s
@@ -339,7 +322,7 @@
                   </div>
                   <div
                     v-if="currentWeather.rainfall > 0"
-                    class="bg-white/20 backdrop-blur-sm rounded-xl p-4"
+                    class="bg-slate-800 backdrop-blur-sm rounded-xl p-4"
                   >
                     <p class="text-sm opacity-80">Rainfall</p>
                     <p class="text-2xl font-bold">
@@ -487,7 +470,7 @@
                 'px-4 py-2 rounded-full font-semibold transition-all',
                 activeMapLayer === layer.id 
                   ? 'bg-gradient-to-br from-slate-900 to-slate-800 text-emerald-50 ring-2 ring-emerald-300 shadow-lg' 
-                  : 'bg-gradient-to-br from-slate-900 to-slate-800 text-emerald-50 shadow-lg'
+                  : 'bg-gradient-to-br from-slate-900 to-slate-800 text-emerald-50 shadow-lg hover:from-slate-700 hover:to-slate-600'
               ]">
               {{ layer.icon }} {{ layer.name }}
             </button>
