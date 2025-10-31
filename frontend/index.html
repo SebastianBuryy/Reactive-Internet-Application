@@ -1,543 +1,477 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Weather App</title>
 
-    <!-- Google Fonts: Raleway -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap"
-      rel="stylesheet"
-    />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AuroraView</title>
 
-    <!-- Font Awesome CDN -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"/>
+  <!-- Google Fonts CDN -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet" />
 
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Font Awesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" />
 
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-    <!-- Tailwind Configuration -->
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ["Outfit", "sans-serif"],
-            },
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Tailwind Configuration -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ["Outfit", "sans-serif"],
           },
         },
-      };
-    </script>
-  </head>
+      },
+    };
+  </script>
+</head>
 
-  <body
-    class="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 min-h-screen flex flex-col"
-  >
+<body class="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 min-h-screen flex flex-col">
 
-    <div id="app" class="px-4 py-8 pt-24 w-full flex-grow">
-      <!-- Header -->
-      <header
-        class="fixed top-0 left-0 right-0 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 shadow-lg shadow-emerald-300/50 z-50 px-8 py-4"
-      >
-        <div class="flex items-center justify-between gap-8">
-          <!-- Logo/Brand -->
-          <h1 class="text-2xl font-bold text-emerald-100 flex items-center gap-3">
-            <i class="fa-solid fa-cloud text-emerald-300"></i>AuroraView
-          </h1>
+  <div id="app" class="px-4 py-8 pt-24 w-full flex-grow">
+    <!-- Header -->
+    <header
+      class="fixed top-0 left-0 right-0 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 shadow-lg shadow-emerald-300/50 z-50 px-8 py-4">
+      <div class="flex items-center justify-between gap-8">
+        <!-- Logo/Brand -->
+        <h1 class="text-2xl font-bold text-emerald-100 flex items-center gap-3">
+          <i class="fa-solid fa-cloud text-emerald-300"></i>AuroraView
+        </h1>
 
-          <!-- Search Component -->
-          <div class="search-container relative flex-1 max-w-sm">
-            <!-- Icon positioned inside on the left -->
-            <i class="fas fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-emerald-200 pointer-events-none"></i>
-            <input
-              type="text"
-              placeholder="Search for a city..."
-              v-model="searchQuery"
-              @input="getPredictions"
-              class="w-full pl-12 px-6 py-2 text-lg text-emerald-100 placeholder-emerald-100 rounded-xl border-2 border-emerald-200 bg-slate-900 shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-200 focus:border-emerald-200 transition-all"
-            />
+        <!-- Search Component -->
+        <div class="search-container relative flex-1 max-w-sm">
+          <!-- Uses reactive searchQuery for autocomplete -->
+          <i
+            class="fas fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-emerald-200 pointer-events-none"></i>
+          <input type="text" placeholder="Search for a city..." v-model="searchQuery" @input="getPredictions"
+            class="w-full pl-12 px-6 py-2 text-lg text-emerald-100 placeholder-emerald-100 rounded-xl border-2 border-emerald-200 bg-slate-900 shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-200 focus:border-emerald-200 transition-all" />
 
-            <div
-              v-if="predictions.length > 0"
-              class="absolute top-full left-0 right-0 mt-2 bg-slate-900 rounded-xl shadow-2xl max-h-80 overflow-y-auto z-50"
-            >
-              <div
-                v-for="prediction in predictions"
-                :key="this.lat + this.lon"
-                @click="selectPlace(prediction)"
-                class="px-6 py-3 hover:bg-slate-950 cursor-pointer transition-colors text-emerald-100 border-b border-emerald-50 last:border-b-0 first:rounded-t-xl last:rounded-b-xl"
-              >
-                {{ prediction.placePrediction.text.text }}
-              </div>
+          <div v-if="predictions.length > 0"
+            class="absolute top-full left-0 right-0 mt-2 bg-slate-900 rounded-xl shadow-2xl max-h-80 overflow-y-auto z-50">
+            <div v-for="prediction in predictions" :key="this.lat + this.lon" @click="selectPlace(prediction)"
+              class="px-6 py-3 hover:bg-slate-950 cursor-pointer transition-colors text-emerald-100 border-b border-emerald-50 last:border-b-0 first:rounded-t-xl last:rounded-b-xl">
+              {{ prediction.placePrediction.text.text }}
             </div>
           </div>
         </div>
-      </header>
+      </div>
+    </header>
 
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
-        <template v-if="weatherData && selectedCity">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
+      <template v-if="weatherData && selectedCity">
         <div class="lg:col-span-5 space-y-6 flex flex-col">
 
-            <!-- Packing Recommendations -->
-            <div class="bg-gradient-to-br from-slate-950 to-slate-900 backdrop-blur-sm rounded-2xl ring-2 ring-emerald-300/50 shadow-md shadow-emerald-300 hover:shadow-lg hover:shadow-emerald-300 p-6">
-              <h3
-                class="text-2xl font-bold text-emerald-50 mb-4 flex items-center gap-2"
-              >
-                <i class="fa-solid fa-suitcase text-emerald-300"></i> Packing Recommendations
-              </h3>
-              <div class="grid md:grid-cols-2 gap-4">
-                <div
-                  class="flex items-center gap-6 p-4 bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-xl"
-                >
-                  <i class="fa-solid fa-umbrella text-emerald-400 fa-2xl"></i>
-                  <div>
-                    <p class="font-semibold text-slate-950">Umbrella:</p>
-                    <p v-if="needsUmbrella" class="text-red-600 font-bold">
-                      Yes, bring an umbrella!<br />Rain is expected.
-                    </p>
-                    <p v-else class="text-green-600 font-bold">
-                      No umbrella needed.
-                    </p>
-                  </div>
+          <!-- Packing Recommendations -->
+          <div
+            class="bg-gradient-to-br from-slate-950 to-slate-900 backdrop-blur-sm rounded-2xl ring-2 ring-emerald-300/50 shadow-md shadow-emerald-300 hover:shadow-lg hover:shadow-emerald-300 p-6">
+            <h3 class="text-2xl font-bold text-emerald-50 mb-4 flex items-center gap-2">
+              <i class="fa-solid fa-suitcase text-emerald-300"></i> Packing Recommendations
+            </h3>
+            <div class="grid md:grid-cols-2 gap-4">
+              <div class="flex items-center gap-6 p-4 bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-xl">
+                <i class="fa-solid fa-umbrella text-emerald-400 fa-2xl"></i>
+                <div>
+                  <p class="font-semibold text-slate-950">Umbrella:</p>
+                  <p v-if="needsUmbrella" class="text-red-600 font-bold">
+                    Yes, bring an umbrella!<br />Rain is expected.
+                  </p>
+                  <p v-else class="text-green-600 font-bold">
+                    No umbrella needed.
+                  </p>
                 </div>
-                <div
-                  class="flex items-center gap-6 p-4 bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-xl"
-                >
-                  <i class="fa-solid fa-shirt text-emerald-400 fa-2xl"></i>
-                  <div>
-                    <p class="font-semibold text-slate-950">Clothing:</p>
-                    <p class="text-gray-700 font-bold">
-                      Pack for {{ tempCategory }} weather.
-                    </p>
-                    <p class="text-gray-700">{{ getTempRangeDescription() }}</p>
-                  </div>
+              </div>
+              <div class="flex items-center gap-6 p-4 bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-xl">
+                <i class="fa-solid fa-shirt text-emerald-400 fa-2xl"></i>
+                <div>
+                  <p class="font-semibold text-slate-950">Clothing:</p>
+                  <p class="text-gray-700 font-bold">
+                    Pack for {{ tempCategory }} weather.
+                  </p>
+                  <p class="text-gray-700">{{ getTempRangeDescription() }}</p>
                 </div>
               </div>
             </div>
+          </div>
 
-            <!-- Air Quality Warnings -->
-            <div
-              v-if="airPollutionData"
-              class="flex-grow bg-gradient-to-br from-slate-950 to-slate-900 backdrop-blur-sm rounded-2xl ring-2 ring-emerald-300/50 shadow-md shadow-emerald-300 hover:shadow-lg hover:shadow-emerald-300 p-6"
-            >
-              <h3
-                class="text-2xl font-bold text-emerald-50 mb-4 flex items-center gap-2"
-              >
-                <i class="fa-solid fa-medal text-emerald-300"></i> Air Quality
-              </h3>
+          <!-- Air Quality Warnings -->
+          <div v-if="airPollutionData"
+            class="flex-grow bg-gradient-to-br from-slate-950 to-slate-900 backdrop-blur-sm rounded-2xl ring-2 ring-emerald-300/50 shadow-md shadow-emerald-300 hover:shadow-lg hover:shadow-emerald-300 p-6">
+            <h3 class="text-2xl font-bold text-emerald-50 mb-4 flex items-center gap-2">
+              <i class="fa-solid fa-medal text-emerald-300"></i> Air Quality
+            </h3>
 
-              <!-- Overall AQI -->
-              <div
-                class="mb-4 p-4 rounded-xl"
-                :class="{
+            <!-- Overall AQI -->
+            <div class="mb-4 p-4 rounded-xl" :class="{
                  'bg-green-100': overallAQI.level === 1,
                  'bg-yellow-100': overallAQI.level === 2,
                  'bg-orange-100': overallAQI.level === 3,
                  'bg-red-100': overallAQI.level === 4,
                  'bg-purple-100': overallAQI.level === 5
-               }"
-              >
-                <p class="text-lg font-semibold">
-                  Overall Air Quality:
-                  <span
-                    :class="{
+               }">
+              <p class="text-lg font-semibold">
+                Overall Air Quality:
+                <span :class="{
                 'text-green-700': overallAQI.level === 1,
                 'text-yellow-700': overallAQI.level === 2,
                 'text-orange-700': overallAQI.level === 3,
                 'text-red-700': overallAQI.level === 4,
                 'text-purple-700': overallAQI.level === 5
-              }"
-                  >
-                    {{ overallAQI.description }} (Level {{ overallAQI.level }})
-                  </span>
+              }">
+                  {{ overallAQI.description }} (Level {{ overallAQI.level }})
+                </span>
+              </p>
+            </div>
+
+            <!-- Warnings for elevated pollutants -->
+            <div v-if="airQualityWarnings.length > 0" class="space-y-3">
+              <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+                <p class="font-semibold text-yellow-800 mb-2">
+                  <i class="fa-solid fa-triangle-exclamation text-yellow-600"></i> Warning: Elevated Pollutant Levels
+                  Detected
                 </p>
               </div>
 
-              <!-- Warnings for elevated pollutants -->
-              <div v-if="airQualityWarnings.length > 0" class="space-y-3">
-                <div
-                  class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded"
-                >
-                  <p class="font-semibold text-yellow-800 mb-2">
-                    <i class="fa-solid fa-triangle-exclamation text-yellow-600"></i> Warning: Elevated Pollutant Levels Detected
-                  </p>
-                </div>
-
-                <div
-                  v-for="(warning, index) in airQualityWarnings"
-                  :key="index"
-                  class="border-l-4 p-4 rounded-lg"
-                  :class="{
+              <div v-for="(warning, index) in airQualityWarnings" :key="index" class="border-l-4 p-4 rounded-lg" :class="{
                    'border-orange-400 bg-orange-50': warning.severity === 'Moderate',
                    'border-red-400 bg-red-50': warning.severity === 'High',
                    'border-purple-400 bg-purple-50': warning.severity === 'Very High'
-                 }"
-                >
-                  <div class="flex justify-between items-start mb-2">
-                    <h4
-                      class="font-bold text-lg"
-                      :class="{
+                 }">
+                <div class="flex justify-between items-start mb-2">
+                  <h4 class="font-bold text-lg" :class="{
                       'text-orange-800': warning.severity === 'Moderate',
                       'text-red-800': warning.severity === 'High',
                       'text-purple-800': warning.severity === 'Very High'
-                    }"
-                    >
-                      {{ warning.pollutant }}
-                    </h4>
-                    <span
-                      class="px-3 py-1 rounded-full text-sm font-semibold"
-                      :class="{
+                    }">
+                    {{ warning.pollutant }}
+                  </h4>
+                  <span class="px-3 py-1 rounded-full text-sm font-semibold" :class="{
                         'bg-orange-200 text-orange-800': warning.severity === 'Moderate',
                         'bg-red-200 text-red-800': warning.severity === 'High',
                         'bg-purple-200 text-purple-800': warning.severity === 'Very High'
-                      }"
-                    >
-                      {{ warning.severity }}
-                    </span>
-                  </div>
-
-                  <div class="space-y-1 text-sm text-slate-950">
-                    <p>
-                      <strong>Current Level:</strong> {{ warning.value }} µg/m³
-                    </p>
-                    <p>
-                      <strong>Safe Threshold:</strong> {{ warning.threshold }}
-                      µg/m³
-                    </p>
-                    <p>
-                      <strong>Exceeded by:</strong> {{ warning.exceedancePercent
-                      }}%
-                    </p>
-                    <p class="mt-2 text-slate-950">
-                      <strong>Potential Health Risk:</strong> {{
-                      warning.healthRisk }}
-                    </p>
-                  </div>
+                      }">
+                    {{ warning.severity }}
+                  </span>
                 </div>
-              </div>
 
-              <!-- No pollutants detected above threshold message -->
-              <div
-                v-else
-                class="bg-green-50 border-l-4 border-green-400 p-4 rounded"
-              >
-                <p class="font-semibold text-green-800">
-                  ✅ All pollutant levels are within safe limits
-                </p>
+                <div class="space-y-1 text-sm text-slate-950">
+                  <p>
+                    <strong>Current Level:</strong> {{ warning.value }} µg/m³
+                  </p>
+                  <p>
+                    <strong>Safe Threshold:</strong> {{ warning.threshold }}
+                    µg/m³
+                  </p>
+                  <p>
+                    <strong>Exceeded by:</strong> {{ warning.exceedancePercent
+                    }}%
+                  </p>
+                  <p class="mt-2 text-slate-950">
+                    <strong>Potential Health Risk:</strong> {{
+                    warning.healthRisk }}
+                  </p>
+                </div>
               </div>
             </div>
 
-            <!-- 3-Day Forecast Table -->
-            <div
-              class="bg-gradient-to-br from-slate-950 to-slate-900 backdrop-blur-sm rounded-2xl ring-2 ring-emerald-300/50 shadow-md shadow-emerald-300 hover:shadow-lg hover:shadow-emerald-300 p-6 overflow-x-auto"
-            >
-              <h3 class="text-2xl font-bold text-emerald-50 mb-4">
-                <i class="fa-solid fa-table-list text-emerald-300"></i> 3-Day Forecast Summary
-              </h3>
-              <table class="w-full">
-                <thead>
-                  <tr class="bg-emerald-300 text-white">
-                    <th class="px-4 py-3 text-left">Date</th>
-                    <th class="px-4 py-3 text-left">Temperature</th>
-                    <th class="px-4 py-3 text-left">Wind Speed</th>
-                    <th class="px-4 py-3 text-left">Rainfall</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr
-                    v-for="(day, index) in threeDayForecast"
-                    :key="day.date"
-                    :class="index % 2 === 0 ? 'bg-emerald-100' : 'bg-emerald-50'"
-                  >
-                    <td class="px-4 py-3 font-medium text-slate-950">
-                      {{ day.date }}
-                    </td>
-                    <td class="px-4 py-3 text-slate-950">
-                      {{ day.minTemp }}°C - {{ day.maxTemp }}°C
-                    </td>
-                    <td class="px-4 py-3 text-slate-950">
-                      {{ day.avgWindSpeed }} m/s
-                    </td>
-                    <td class="px-4 py-3 text-slate-950">
-                      {{ day.totalRainfall }} mm
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            <!-- No pollutants detected above threshold message -->
+            <div v-else class="bg-green-50 border-l-4 border-green-400 p-4 rounded">
+              <p class="font-semibold text-green-800">
+                ✅ All pollutant levels are within safe limits
+              </p>
             </div>
           </div>
-          <div class="lg:col-span-7 space-y-6">
-            <!-- Current Weather Card -->
+
+          <!-- 3-Day Forecast Table -->
+          <div
+            class="bg-gradient-to-br from-slate-950 to-slate-900 backdrop-blur-sm rounded-2xl ring-2 ring-emerald-300/50 shadow-md shadow-emerald-300 hover:shadow-lg hover:shadow-emerald-300 p-6 overflow-x-auto">
+            <h3 class="text-2xl font-bold text-emerald-50 mb-4">
+              <i class="fa-solid fa-table-list text-emerald-300"></i> 3-Day Forecast Summary
+            </h3>
+            <table class="w-full">
+              <thead>
+                <tr class="bg-emerald-300 text-white">
+                  <th class="px-4 py-3 text-left">Date</th>
+                  <th class="px-4 py-3 text-left">Temperature</th>
+                  <th class="px-4 py-3 text-left">Wind Speed</th>
+                  <th class="px-4 py-3 text-left">Rainfall</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(day, index) in threeDayForecast" :key="day.date"
+                  :class="index % 2 === 0 ? 'bg-emerald-100' : 'bg-emerald-50'">
+                  <td class="px-4 py-3 font-medium text-slate-950">
+                    {{ day.date }}
+                  </td>
+                  <td class="px-4 py-3 text-slate-950">
+                    {{ day.minTemp }}°C - {{ day.maxTemp }}°C
+                  </td>
+                  <td class="px-4 py-3 text-slate-950">
+                    {{ day.avgWindSpeed }} m/s
+                  </td>
+                  <td class="px-4 py-3 text-slate-950">
+                    {{ day.totalRainfall }} mm
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="lg:col-span-7 space-y-6">
+          <!-- Current Weather Card -->
+          <div
+            class="bg-gradient-to-br from-slate-950 to-slate-900 rounded-2xl ring-2 ring-emerald-300/50 shadow-md shadow-emerald-300 hover:shadow-lg hover:shadow-emerald-300 p-8 text-white">
+            <h3 class="text-2xl text-emerald-50 font-bold mb-6 flex items-center gap-2">
+              <i class="fa-solid fa-sun text-emerald-300"></i> Current Weather in <span class="text-emerald-200">{{
+                selectedCity }}</span>
+            </h3>
+            <div class="grid md:grid-cols-3 gap-6 items-center">
+              <!-- Weather Icon & Temp -->
+              <div class="flex items-center justify-center md:justify-start gap-4">
+                <img :src="getWeatherIconUrl(currentWeather.icon)" :alt="currentWeather.description"
+                  class="w-24 h-24 drop-shadow-lg" />
+                <div>
+                  <div class="text-5xl text-emerald-200 font-bold">
+                    {{ currentWeather.temp }}°C
+                  </div>
+                  <div class="text-lg capitalize opacity-90">
+                    {{ currentWeather.description }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Details Grid -->
+              <div class="md:col-span-2 grid grid-cols-2 gap-4">
+                <div class="bg-slate-800 backdrop-blur-sm rounded-xl p-4">
+                  <p class="text-sm opacity-80">Feels like</p>
+                  <p class="text-2xl font-bold">
+                    {{ currentWeather.feelsLike }}°C
+                  </p>
+                </div>
+                <div class="bg-slate-800 backdrop-blur-sm rounded-xl p-4">
+                  <p class="text-sm opacity-80">Humidity</p>
+                  <p class="text-2xl font-bold">
+                    {{ currentWeather.humidity }}%
+                  </p>
+                </div>
+                <div class="bg-slate-800 backdrop-blur-sm rounded-xl p-4">
+                  <p class="text-sm opacity-80">Wind</p>
+                  <p class="text-2xl font-bold">
+                    {{ currentWeather.windSpeed }} m/s
+                  </p>
+                </div>
+                <div v-if="currentWeather.rainfall > 0" class="bg-slate-800 backdrop-blur-sm rounded-xl p-4">
+                  <p class="text-sm opacity-80">Rainfall</p>
+                  <p class="text-2xl font-bold">
+                    {{ currentWeather.rainfall }} mm
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Next 3 Days Forecast Cards -->
+          <div class="grid md:grid-cols-3 gap-6">
+            <div v-for="day in threeDayForecast" :key="day.date"
+              class="bg-gradient-to-br from-slate-950 to-slate-900 rounded-2xl p-6 ring-2 ring-emerald-300/50 shadow-md shadow-emerald-300 hover:shadow-lg hover:shadow-emerald-300">
+              <div class="text-lg font-bold text-emerald-100 mb-3">
+                {{ day.date }}
+              </div>
+              <div class="flex items-center justify-between gap-3 mb-4">
+                <img :src="getWeatherIconUrl(day.icon)" :alt="day.description"
+                  class="w-24 h-24 flex-shrink-0 p-2 bg-gradient-to-r from-slate-900 to-slate-800 rounded-full shadow-md ring-2 ring-emerald-200" />
+                <div class="flex flex-col text-right">
+                  <div class="text-2xl sm:text-lg md:text-xl font-semibold">
+                    <span class="text-emerald-100">Night: </span>
+                    <span class="text-emerald-300 font-bold">{{ day.minTemp }}°</span>
+                  </div>
+                  <div class="text-2xl sm:text-lg md:text-xl font-semibold">
+                    <span class="text-emerald-50">Day: </span>
+                    <span class="text-emerald-300 font-bold">{{ day.maxTemp }}°</span>
+                  </div>
+                </div>
+              </div>
+              <div class="text-sm text-emerald-50 capitalize font-semibold mb-4">
+                {{ day.description }}
+              </div>
+              <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-gray-500">Feels like:</span>
+                  <span class="font-semibold text-emerald-50">{{ day.avgFeelsLike }}°C</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-500">Humidity:</span>
+                  <span class="font-semibold text-emerald-50">{{ day.avgHumidity }}%</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-500">Wind:</span>
+                  <span class="font-semibold text-emerald-50">{{ day.avgWindSpeed }} m/s</span>
+                </div>
+                <div v-if="day.totalRainfall > 0" class="flex justify-between">
+                  <span class="text-gray-500">Rain:</span>
+                  <span class="font-semibold text-emerald-50">{{ day.totalRainfall }} mm</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Section -->
+          <div class="grid md:grid-cols-2 gap-6">
+            <!-- Temperature Chart -->
             <div
-              class="bg-gradient-to-br from-slate-950 to-slate-900 rounded-2xl ring-2 ring-emerald-300/50 shadow-md shadow-emerald-300 hover:shadow-lg hover:shadow-emerald-300 p-8 text-white"
-            >
-              <h3 class="text-2xl text-emerald-50 font-bold mb-6 flex items-center gap-2">
-                <i class="fa-solid fa-sun text-emerald-300"></i> Current Weather in <span class="text-emerald-200">{{ selectedCity }}</span>
+              class="bg-gradient-to-br from-slate-950 to-slate-900 backdrop-blur-sm rounded-2xl ring-2 ring-emerald-300/50 shadow-md shadow-emerald-300 hover:shadow-lg hover:shadow-emerald-300 p-6">
+              <h3 class="text-xl font-bold text-emerald-50 mb-4">
+                <i class="fa-solid fa-temperature-high text-emerald-300"></i> Temperature Trend (Every 6 Hours)
               </h3>
-              <div class="grid md:grid-cols-3 gap-6 items-center">
-                <!-- Weather Icon & Temp -->
-                <div
-                  class="flex items-center justify-center md:justify-start gap-4"
-                >
-                  <img
-                    :src="getWeatherIconUrl(currentWeather.icon)"
-                    :alt="currentWeather.description"
-                    class="w-24 h-24 drop-shadow-lg"
-                  />
-                  <div>
-                    <div class="text-5xl text-emerald-200 font-bold">
-                      {{ currentWeather.temp }}°C
+              <div class="relative h-64 px-4 pb-12">
+                <!-- Chart area with proper spacing -->
+                <div class="relative h-full flex items-end justify-between">
+                  <!-- SVG Line -->
+                  <svg class="absolute inset-0 w-full h-full" viewBox="0 0 532 208" style="pointer-events: none"
+                    preserveAspectRatio="none">
+                    <polyline :points="getTemperatureLinePoints()" fill="none" stroke="rgb(59, 130, 246)"
+                      stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
+                      vector-effect="non-scaling-stroke" />
+                  </svg>
+
+                  <!-- Data Points -->
+                  <div v-for="(point, index) in temperatureChart" :key="index"
+                    class="flex flex-col items-center relative" :style="{ marginBottom: (point.temp * 3) + 'px' }">
+                    <!-- Temperature Label -->
+                    <div class="text-xs font-bold text-blue-600 mb-1">
+                      {{ point.temp }}°
                     </div>
-                    <div class="text-lg capitalize opacity-90">
-                      {{ currentWeather.description }}
-                    </div>
+
+                    <!-- Point Circle -->
+                    <div class="w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-lg z-10"></div>
                   </div>
                 </div>
 
-                <!-- Details Grid -->
-                <div class="md:col-span-2 grid grid-cols-2 gap-4">
-                  <div class="bg-slate-800 backdrop-blur-sm rounded-xl p-4">
-                    <p class="text-sm opacity-80">Feels like</p>
-                    <p class="text-2xl font-bold">
-                      {{ currentWeather.feelsLike }}°C
-                    </p>
-                  </div>
-                  <div class="bg-slate-800 backdrop-blur-sm rounded-xl p-4">
-                    <p class="text-sm opacity-80">Humidity</p>
-                    <p class="text-2xl font-bold">
-                      {{ currentWeather.humidity }}%
-                    </p>
-                  </div>
-                  <div class="bg-slate-800 backdrop-blur-sm rounded-xl p-4">
-                    <p class="text-sm opacity-80">Wind</p>
-                    <p class="text-2xl font-bold">
-                      {{ currentWeather.windSpeed }} m/s
-                    </p>
-                  </div>
-                  <div
-                    v-if="currentWeather.rainfall > 0"
-                    class="bg-slate-800 backdrop-blur-sm rounded-xl p-4"
-                  >
-                    <p class="text-sm opacity-80">Rainfall</p>
-                    <p class="text-2xl font-bold">
-                      {{ currentWeather.rainfall }} mm
-                    </p>
+                <!-- Time Labels (outside the chart area) -->
+                <div class="flex justify-between mt-2">
+                  <div v-for="(point, index) in temperatureChart" :key="'label-' + index"
+                    class="text-xs text-emerald-50 text-center flex-1">
+                    {{ point.time }}
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Next 3 Days Forecast Cards -->
-              <div class="grid md:grid-cols-3 gap-6">
-                <div
-                  v-for="day in threeDayForecast"
-                  :key="day.date"
-                  class="bg-gradient-to-br from-slate-950 to-slate-900 rounded-2xl p-6 ring-2 ring-emerald-300/50 shadow-md shadow-emerald-300 hover:shadow-lg hover:shadow-emerald-300"
-                >
-                  <div class="text-lg font-bold text-emerald-100 mb-3">
-                    {{ day.date }}
+            <!-- Rainfall Chart -->
+            <div
+              class="bg-gradient-to-br from-slate-950 to-slate-900 backdrop-blur-sm rounded-2xl ring-2 ring-emerald-300/50 shadow-md shadow-emerald-300 hover:shadow-lg hover:shadow-emerald-300 p-6">
+              <h3 class="text-xl font-bold text-emerald-50 mb-4">
+                <i class="fa-solid fa-droplet text-emerald-300"></i> Rainfall Levels
+              </h3>
+              <div class="flex items-end justify-around h-64 gap-4">
+                <div v-for="(point, index) in rainfallChart" :key="index"
+                  class="flex flex-col items-center gap-2 flex-1">
+                  <div class="text-xs font-bold text-blue-600">
+                    {{ point.rainfall }}mm
                   </div>
-                  <div class="flex items-center justify-between gap-3 mb-4">
-                    <img :src="getWeatherIconUrl(day.icon)" :alt="day.description"
-                      class="w-24 h-24 flex-shrink-0 p-2 bg-gradient-to-r from-slate-900 to-slate-800 rounded-full shadow-md ring-2 ring-emerald-200" />
-                    <div class="flex flex-col text-right">
-                      <div class="text-2xl sm:text-lg md:text-xl font-semibold">
-                        <span class="text-emerald-100">Night: </span>
-                        <span class="text-emerald-300 font-bold">{{ day.minTemp }}°</span>
-                      </div>
-                      <div class="text-2xl sm:text-lg md:text-xl font-semibold">
-                        <span class="text-emerald-50">Day: </span>
-                        <span class="text-emerald-300 font-bold">{{ day.maxTemp }}°</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="text-sm text-emerald-50 capitalize font-semibold mb-4">
-                    {{ day.description }}
-                  </div>
-                  <div class="space-y-2 text-sm">
-                    <div class="flex justify-between">
-                      <span class="text-gray-500">Feels like:</span>
-                      <span class="font-semibold text-emerald-50"
-                        >{{ day.avgFeelsLike }}°C</span
-                      >
-                    </div>
-                    <div class="flex justify-between">
-                      <span class="text-gray-500">Humidity:</span>
-                      <span class="font-semibold text-emerald-50"
-                        >{{ day.avgHumidity }}%</span
-                      >
-                    </div>
-                    <div class="flex justify-between">
-                      <span class="text-gray-500">Wind:</span>
-                      <span class="font-semibold text-emerald-50"
-                        >{{ day.avgWindSpeed }} m/s</span
-                      >
-                    </div>
-                    <div
-                      v-if="day.totalRainfall > 0"
-                      class="flex justify-between"
-                    >
-                      <span class="text-gray-500">Rain:</span>
-                      <span class="font-semibold text-emerald-50"
-                        >{{ day.totalRainfall }} mm</span
-                      >
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-            <!-- Charts Section -->
-            <div class="grid md:grid-cols-2 gap-6">
-              <!-- Temperature Chart -->
-              <div class="bg-gradient-to-br from-slate-950 to-slate-900 backdrop-blur-sm rounded-2xl ring-2 ring-emerald-300/50 shadow-md shadow-emerald-300 hover:shadow-lg hover:shadow-emerald-300 p-6">
-                <h3 class="text-xl font-bold text-emerald-50 mb-4">
-                  <i class="fa-solid fa-temperature-high text-emerald-300"></i> Temperature Trend (Every 6 Hours)
-                </h3>
-                <div class="relative h-64 px-4 pb-12">
-                  <!-- Chart area with proper spacing -->
-                  <div class="relative h-full flex items-end justify-between">
-                    <!-- SVG Line -->
-                    <svg class="absolute inset-0 w-full h-full" viewBox="0 0 532 208" style="pointer-events: none"
-                      preserveAspectRatio="none">
-                      <polyline :points="getTemperatureLinePoints()" fill="none" stroke="rgb(59, 130, 246)" stroke-width="3"
-                        stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
-                    </svg>
-            
-                    <!-- Data Points -->
-                    <div v-for="(point, index) in temperatureChart" :key="index" class="flex flex-col items-center relative"
-                      :style="{ marginBottom: (point.temp * 3) + 'px' }">
-                      <!-- Temperature Label -->
-                      <div class="text-xs font-bold text-blue-600 mb-1">
-                        {{ point.temp }}°
-                      </div>
-            
-                      <!-- Point Circle -->
-                      <div class="w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-lg z-10"></div>
-                    </div>
-                  </div>
-            
-                  <!-- Time Labels (outside the chart area) -->
-                  <div class="flex justify-between mt-2">
-                    <div v-for="(point, index) in temperatureChart" :key="'label-' + index"
-                      class="text-xs text-emerald-50 text-center flex-1">
-                      {{ point.time }}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            
-              <!-- Rainfall Chart -->
-              <div class="bg-gradient-to-br from-slate-950 to-slate-900 backdrop-blur-sm rounded-2xl ring-2 ring-emerald-300/50 shadow-md shadow-emerald-300 hover:shadow-lg hover:shadow-emerald-300 p-6">
-                <h3 class="text-xl font-bold text-emerald-50 mb-4">
-                  <i class="fa-solid fa-droplet text-emerald-300"></i> Rainfall Levels
-                </h3>
-                <div class="flex items-end justify-around h-64 gap-4">
-                  <div v-for="(point, index) in rainfallChart" :key="index" class="flex flex-col items-center gap-2 flex-1">
-                    <div class="text-xs font-bold text-blue-600">
-                      {{ point.rainfall }}mm
-                    </div>
-                    <div
-                      class="w-full bg-gradient-to-t from-blue-400 to-blue-200 rounded-t-lg transition-all hover:from-blue-500 hover:to-blue-300"
-                      :style="{
+                  <div
+                    class="w-full bg-gradient-to-t from-blue-400 to-blue-200 rounded-t-lg transition-all hover:from-blue-500 hover:to-blue-300"
+                    :style="{
                                 height: parseFloat(point.rainfall) * 10 + 'px',
                                 minHeight: '10px'
                               }"></div>
-                    <div class="text-xs text-emerald-50 text-center leading-tight">
-                      {{ point.date }}
-                    </div>
+                  <div class="text-xs text-emerald-50 text-center leading-tight">
+                    {{ point.date }}
                   </div>
                 </div>
               </div>
-          </div>
+            </div>
           </div>
         </div>
+    </div>
 
-        <!-- Weather Map Section (Full Width) -->
-        <div class="lg:col-span-12 bg-gradient-to-br from-slate-950 to-slate-900 backdrop-blur-sm rounded-2xl ring-2 ring-emerald-300/50 shadow-md shadow-emerald-300 hover:shadow-lg hover:shadow-emerald-300 p-6 mt-6">
-          <h3 class="text-2xl font-bold text-emerald-50 mb-4 flex items-center gap-2">
-            <i class="fa-solid fa-map-location-dot text-emerald-300"></i> Interactive Weather Map
-          </h3>
-        
-          <!-- Layer Toggle Buttons -->
-          <div class="flex flex-wrap gap-2 mb-4">
-            <button v-for="layer in mapLayers" :key="layer.id" @click="toggleMapLayer(layer.id)" :class="[
+    <!-- Weather Map Section -->
+    <div
+      class="lg:col-span-12 bg-gradient-to-br from-slate-950 to-slate-900 backdrop-blur-sm rounded-2xl ring-2 ring-emerald-300/50 shadow-md shadow-emerald-300 hover:shadow-lg hover:shadow-emerald-300 p-6 mt-6">
+      <h3 class="text-2xl font-bold text-emerald-50 mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-map-location-dot text-emerald-300"></i> Interactive Weather Map
+      </h3>
+
+      <!-- Layer Toggle Buttons -->
+      <div class="flex flex-wrap gap-2 mb-4">
+        <button v-for="layer in mapLayers" :key="layer.id" @click="toggleMapLayer(layer.id)" :class="[
                 'px-4 py-2 rounded-full font-semibold transition-all',
                 activeMapLayer === layer.id 
                   ? 'bg-gradient-to-br from-slate-900 to-slate-800 text-emerald-50 ring-2 ring-emerald-300 shadow-lg' 
                   : 'bg-gradient-to-br from-slate-900 to-slate-800 text-emerald-50 shadow-lg hover:from-slate-700 hover:to-slate-600'
               ]">
-              {{ layer.icon }} {{ layer.name }}
-            </button>
-        
-            <!-- Legend Toggle Button -->
-            <button @click="showMapLegend = !showMapLegend"
-              class="px-4 py-2 rounded-full font-semibold transition-all bg-emerald-300 text-slate-950 hover:bg-emerald-400 ml-auto">
-              {{ showMapLegend ? 'Hide' : 'Show' }} Legend
-            </button>
-          </div>
-        
-          <!-- Map and Legend Container -->
-          <div class="relative">
-            <!-- Map Container -->
-            <div id="weather-map" class="w-full h-[500px] md:h-[500px] lg:h-[600px] xl:h-[700px] rounded-xl shadow-lg"></div>
-        
-            <!-- Legend Overlay (positioned on map) -->
-            <div v-if="showMapLegend"
-              class="absolute bottom-4 right-4 bg-white/95 backdrop-blur-sm rounded-lg shadow-xl p-4 border-2 border-gray-300 z-[1000]">
-              <div class="flex items-center justify-between mb-2">
-                <h4 class="font-bold text-sm text-gray-800">{{ getActiveLegendTitle() }}</h4>
-              </div>
+          {{ layer.icon }} {{ layer.name }}
+        </button>
 
-              <!-- Dynamic Legend Content -->
-              <div v-html="getActiveLegendHTML()"></div>
-            </div>
-          </div>
-        
-          <!-- Tip -->
-          <div class="mt-4 p-4 bg-slate-900 rounded-lg border-2 border-emerald-200 shadow-lg">
-            <p class="text-sm text-emerald-50">
-              <strong>💡 Tip:</strong> Use the buttons above to switch between different weather layers.
-              Click "Show Legend" to understand the color scale. Zoom and pan to explore surrounding areas.
-            </p>
-          </div>
+        <!-- Legend Toggle Button -->
+        <button @click="showMapLegend = !showMapLegend"
+          class="px-4 py-2 rounded-full font-semibold transition-all bg-emerald-300 text-slate-950 hover:bg-emerald-400 ml-auto">
+          {{ showMapLegend ? 'Hide' : 'Show' }} Legend
+        </button>
+      </div>
+
+      <!-- Map and Legend Container -->
+      <div class="relative">
+        <!-- Map Container -->
+        <div id="weather-map" class="w-full h-[500px] md:h-[500px] lg:h-[600px] xl:h-[700px] rounded-xl shadow-lg">
         </div>
 
-        </template>
-        <!-- Initial state message -->
-        <div v-else
-          class="lg:col-span-12 mt-20 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 backdrop-blur-sm rounded-2xl shadow-md shadow-emerald-300 p-16 text-center max-w-2xl mx-auto">
-          <div class="text-6xl mb-4">🔍</div>
-          <p class="text-2xl text-emerald-100 font-medium">
-            Search for a city to see the weather forecast
-          </p>
+        <!-- Legend Overlay -->
+        <div v-if="showMapLegend"
+          class="absolute bottom-4 right-4 bg-white/95 backdrop-blur-sm rounded-lg shadow-xl p-4 border-2 border-gray-300 z-[1000]">
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="font-bold text-sm text-gray-800">{{ getActiveLegendTitle() }}</h4>
+          </div>
+
+          <!-- Dynamic Legend Content -->
+          <div v-html="getActiveLegendHTML()"></div>
         </div>
+      </div>
+
+      <!-- Tip -->
+      <div class="mt-4 p-4 bg-slate-900 rounded-lg border-2 border-emerald-200 shadow-lg">
+        <p class="text-sm text-emerald-50">
+          <strong>💡 Tip:</strong> Use the buttons above to switch between different weather layers.
+          Click "Show Legend" to understand the color scale. Zoom and pan to explore surrounding areas.
+        </p>
       </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 shadow-emerald-300 shadow-2xl p-4 text-center">
-      <p class="text-emerald-50">
-        © 2025 - Built with ❤️ by
-        <a
-          href="https://github.com/sebastianburyy"
-          target="_blank"
-          class="font-semibold"
-          >Sebastian Bury
-        </a>
+    </template>
+    <!-- Initial state message -->
+    <div v-else
+      class="lg:col-span-12 mt-20 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 backdrop-blur-sm rounded-2xl shadow-md shadow-emerald-300 p-16 text-center max-w-2xl mx-auto">
+      <div class="text-6xl mb-4">🔍</div>
+      <p class="text-2xl text-emerald-100 font-medium">
+        Search for a city to see the weather forecast
       </p>
-    </footer>
+    </div>
+  </div>
+  </div>
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Vue.js CDN -->
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <!-- Vue App -->
-    <script src="app.js"></script>
-  </body>
+  <!-- Footer -->
+  <footer
+    class="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 shadow-emerald-300 shadow-2xl p-4 text-center">
+    <p class="text-emerald-50">
+      © 2025 - Built with ❤️ by
+      <a href="https://github.com/sebastianburyy" target="_blank" class="font-semibold">Sebastian Bury
+      </a>
+    </p>
+  </footer>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Vue.js CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <!-- Vue App -->
+  <script src="app.js"></script>
+</body>
+
 </html>

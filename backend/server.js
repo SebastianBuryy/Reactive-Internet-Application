@@ -27,7 +27,7 @@ app.get('/api/autocomplete', async (req, res) => {
 
         const requestBody = {
             input: input,
-            includedPrimaryTypes: ['locality', 'administrative_area_level_1'],
+            includedPrimaryTypes: ['locality', 'administrative_area_level_1'], // Filter for cities and administrative areas only
         };
 
         const response = await fetch(url, {
@@ -56,7 +56,7 @@ app.get('/api/places-details', async (req, res) => {
             return res.status(400).json({ error: 'placeId parameter is required' });
         }
 
-        const url = `https://places.googleapis.com/v1/places/${placeId}?fields=location,displayName`;
+        const url = `https://places.googleapis.com/v1/places/${placeId}?fields=location,displayName`; // Extract name and longitude/latitude
 
         const response = await fetch(url, {
             method: 'GET',

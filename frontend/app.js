@@ -118,7 +118,7 @@ createApp({
                 5: { level: 'Very Poor', color: 'purple' }
             };
 
-            // WHO Air Quality Guidelines - "Good" thresholds
+            // WHO Air Quality Guidelines
             const thresholds = {
                 pm2_5: { good: 10, pollutant: 'Particulate (PM2.5)', health: 'Can cause respiratory issues and heart disease.' },
                 pm10: { good: 20, pollutant: 'Particulate (PM10)', health: 'Can irritate airways and worsen lung diseases.' },
@@ -182,10 +182,10 @@ createApp({
                 time: new Date(firstItem.dt * 1000)
             };
 
-            // All data including today (for charts - 20th, 21st, 22nd, 23rd)
+            // All data including today
             const allData = this.weatherData.list;
 
-            // Filter to exclude today for the forecast tables/cards (21st, 22nd, 23rd only)
+            // Filter to exclude today for the forecast tables/cards
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             tomorrow.setHours(0, 0, 0, 0);
@@ -277,7 +277,7 @@ createApp({
 
             // Calculate averages and format - limit to first 3 days
             return Object.values(days).slice(0, 3).map(day => {
-                // Get most frequent weather icon/description (typically midday)
+                // Get most frequent weather icon/description
                 const middleIndex = Math.floor(day.weatherIcons.length / 2);
 
                 return {
@@ -295,9 +295,9 @@ createApp({
         },
 
         prepareChartData(forecasts) {
-            // Temperature chart data (every 6 hours for clarity)
+            // Temperature chart data (every 6 hours)
             this.temperatureChart = forecasts
-                .filter((_, index) => index % 2 === 0) // Every 6 hours
+                .filter((_, index) => index % 2 === 0)
                 .map(item => ({
                     time: new Date(item.dt * 1000).toLocaleString('en-GB', {
                         day: 'numeric',
@@ -338,9 +338,9 @@ createApp({
         getTemperatureLinePoints() {
             if (!this.temperatureChart || this.temperatureChart.length === 0) return '';
 
-            const chartWidth = 532; // w-full in SVG viewBox
-            const chartHeight = 208; // h-64 = 16rem = 256px
-            const bottomPadding = 8; // pb-6 = 1.5rem = 24px for labels
+            const chartWidth = 532;
+            const chartHeight = 208;
+            const bottomPadding = 8;
             const availableHeight = chartHeight - bottomPadding;
 
             const points = this.temperatureChart.map((point, index) => {
